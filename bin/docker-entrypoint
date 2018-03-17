@@ -1,0 +1,28 @@
+#!/bin/bash
+ADMIN_PASS=${ADMIN_PASS:-wins}
+WIFI_DESC=${WIFI_DESC:-Lantern}
+WIFI_SSID=${WIFI_SSID:-my-router}
+WIFI_PASS=${WIFI_PASS:-my-pass}
+
+echo "updating admin password..."
+echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
+
+echo "updating wireless credentials..."
+touch /etc/netctl/wlan0-SSID
+cat <<EOF >"/etc/netctl/wlan0-SSID"
+Description="${WIFI_DESC}"
+Interface=wlan0
+Connection=wireless
+Security=wpa
+ESSID="${WIFI_SSID}"
+IP=dhcp
+Key="${WIFI_PASS}"
+EOF
+
+echo "using network: ${WIFI_SSID}"
+
+echo "starting service..."
+/usr/local/bin/lantern-service &
+
+echo "entering shell..."
+zsh

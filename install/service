@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "#############################################"
+echo "## System Service"
+echo "#############################################"
+
+touch /etc/systemd/system/lantern.service
+cat <<EOF >"/etc/systemd/system/lantern.service"
+[Unit]
+Description=Lantern Service
+
+[Service]
+ExecStart=/usr/local/bin/lantern-service
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable lantern.service

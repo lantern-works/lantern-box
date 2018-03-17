@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo "#############################################"
+echo "## User and Shell Setup"
+echo "#############################################"
+
+# disable Signature Checks
+sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
+
+#install other system requirements
+pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
+    bash-completion termite-terminfo
+    
+# create admin user
+useradd -m -g wheel -s /usr/bin/zsh admin
+echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
+
+# set zsh as the default shell
+chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
+chown admin. /home/admin/.zshrc

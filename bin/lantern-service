@@ -1,0 +1,3 @@
+#!/bin/bash
+echo "running placeholder service..."
+trap : TERM INT; sleep infinity & wait

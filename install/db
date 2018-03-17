@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo "#############################################"
+echo "## Database & Web Server Dependencies"
+echo "#############################################"
+
+# install node.js dependencies
+pacman -Syu --noconfirm nodejs npm python2 base-devel 
+ln -s /usr/bin/python2 /bin/python
+ln -s /usr/bin/python2-config /bin/python-config
+npm config set unsafe-perm true
+mkdir -p /opt/lantern/
+cd /opt/lantern
+npm install express express-pouchdb pouchdb-core \
+    pouchdb-adapter-http pouchdb-adapter-node-websql \
+    pouchdb-mapreduce pouchdb-replication
+npm config set unsafe-perm false
