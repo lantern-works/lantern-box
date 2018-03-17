@@ -1,0 +1,8 @@
+#!/bin/bash
+ADMIN_PASS=${ADMIN_PASS:-wins}
+
+echo "#############################################"
+echo "## Finalizing User Accounts"
+echo "#############################################"
+
+echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin

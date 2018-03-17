@@ -1,0 +1,25 @@
+#!/bin/bash
+SYSTEM_SERVICE=${SYSTEM_SERVICE:-/usr/local/bin/service}
+
+if [[ $1 == "create" ]]; then
+    echo "#############################################"
+    echo "## Configuring System Service"
+    echo "#############################################"
+    touch /etc/systemd/system/lantern.service
+    cat <<EOF >"/etc/systemd/system/lantern.service"
+[Unit]
+Description=Lantern Service
+
+[Service]
+ExecStart={SYSTEM_SERVICE}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    systemctl enable lantern.service
+else
+    echo "running placeholder service..."
+    # Keep service running
+    trap : TERM INT; sleep infinity & wait
+fi 
