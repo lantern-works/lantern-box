@@ -5,8 +5,7 @@ Our Docker image is modeled after a Raspberry Pi Zero W. The image enables us to
 ### Getting Started
 
 ```bash
-docker build -t lantern-core .
-docker run -it lantern-core 
+make && make run
 ```
 
 ### Disclaimer
