@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "starting service..."
+/usr/local/bin/lantern-service &
+
+echo "now online..."
+lantern-boot
+
+echo "entering shell..."
+zsh

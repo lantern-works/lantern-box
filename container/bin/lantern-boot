@@ -1,4 +1,5 @@
 #!/bin/bash
+
 ADMIN_PASS=${ADMIN_PASS:-wins}
 WIFI_DESC=${WIFI_DESC:-Lantern}
 WIFI_SSID=${WIFI_SSID:-my-router}
@@ -20,9 +21,3 @@ Key="${WIFI_PASS}"
 EOF
 
 echo "using network: ${WIFI_SSID}"
-
-echo "starting service..."
-/usr/local/bin/lantern-service &
-
-echo "entering shell..."
-zsh
