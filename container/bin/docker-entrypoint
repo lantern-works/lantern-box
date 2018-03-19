@@ -1,10 +1,19 @@
 #!/bin/bash
 
-echo "starting service..."
-/usr/local/bin/lantern-service &
+if [[ -d /opt/node_modules/ ]]; then
+    echo "using cached node_modules..."
+else
+    cd /opt/
+    npm config set unsafe-perm true
+    npm install
+    npm config set unsafe-perm false
+fi
 
 echo "now online..."
 lantern-boot
+
+echo "starting service..."
+/usr/local/bin/lantern-service &
 
 echo "entering shell..."
 zsh

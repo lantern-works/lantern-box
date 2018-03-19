@@ -1,3 +1,4 @@
 #!/bin/bash
-echo "running placeholder service..."
+cd /opt/
+npm start
 trap : TERM INT; sleep infinity & wait

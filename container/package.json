@@ -1,0 +1,16 @@
+{
+    "name": "lantern",
+    "version": "0.0.2",
+    "dependencies": {
+        "express": "*",
+        "pouchdb-core": "*",
+        "pouchdb-adapter-node-websql": "*",
+        "pouchdb-adapter-http": "*",
+        "pouchdb-mapreduce": "*",
+        "pouchdb-replication": "*",
+        "express-pouchdb": "*"
+    },
+    "scripts": {
+        "start": "node server.js"
+    }
+}
