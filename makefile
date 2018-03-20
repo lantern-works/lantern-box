@@ -5,13 +5,14 @@ SHELL := /bin/bash
 
 TAG?=latest
 DATE := $(shell date +%s)
+CONTAINERS := $(shell docker ps -a -q)
 
 build:
 	docker build -t "lantern-core:${TAG}" ./container
 
 run:
 	docker run --name "lantern-core" -it  \
-		--volume ${PWD}/container/ext_node_modules:/opt/node_modules \
+		--volume ${PWD}/container/app/node_modules:/opt/lantern/node_modules \
 		--env-file _env \
 		-p 8080:80 \
 		"lantern-core:${TAG}"
@@ -19,10 +20,11 @@ run:
 image:
 	docker run -it --privileged \
 	--volume ${PWD}:/tmp \
-	--volume ${PWD}/container/ext_node_modules:/opt/node_modules \
 	--env-file _env \
-	-e SCRIPT_DIR="container/scripts" \
-	-e COPY_DIR="container" \
+	-e IMAGE_NAME="lantern.img" \
+	-e COPY_DIR="/tmp/container/app" \
+	-e SCRIPT_DIR="/tmp/container/scripts" \
+	-e SETUP_SCRIPT="/tmp/pi-setup" \
 	pi-maker
 
 clean:

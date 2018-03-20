@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export PATH="${PATH}:/opt/lantern/bin"
+
+system-config
+
+echo "starting service..."
+lantern-service &
+
+echo "entering shell..."
+zsh

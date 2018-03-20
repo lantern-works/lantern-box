@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "#############################################"
-echo "## User and Shell Setup"
+echo "## System Setup"
 echo "#############################################"
 
 # disable Signature Checks
@@ -9,7 +9,13 @@ sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
 
 #install other system requirements
 pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
-    bash-completion termite-terminfo
+    bash-completion termite-terminfo \
+    nodejs npm python2 base-devel \
+    avahi nss-mdns wpa_supplicant \
+    wpa_actiond ifplugd crda dialog
+    
+ln -s /usr/bin/python2 /bin/python
+ln -s /usr/bin/python2-config /bin/python-config
     
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin

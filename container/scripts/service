@@ -10,7 +10,7 @@ cat <<EOF >"/etc/systemd/system/lantern.service"
 Description=Lantern Service
 
 [Service]
-ExecStart=/usr/local/bin/lantern-service
+ExecStart=/opt/lantern/bin/lantern-service
 Restart=always
 
 [Install]

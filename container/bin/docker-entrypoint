@@ -1,9 +1,0 @@
-#!/bin/bash
-
-/tmp/scripts/config
-
-echo "starting service..."
-/usr/local/bin/lantern-service &
-
-echo "entering shell..."
-zsh

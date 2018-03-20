@@ -1,4 +1,4 @@
 #!/bin/bash
-cd /opt/
+cd /opt/lantern/
 npm start
 trap : TERM INT; sleep infinity & wait

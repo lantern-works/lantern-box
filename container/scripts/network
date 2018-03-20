@@ -4,12 +4,6 @@ echo "#############################################"
 echo "## Discovery & Networking"
 echo "#############################################"
 
-# disable Signature Checks
-sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
-
-pacman -Syu --noconfirm avahi nss-mdns wpa_supplicant \
-    wpa_actiond ifplugd crda dialog
-
 # Install zero-conf to make the pi easier to find on the network
 sed -i '/^hosts: /s/files dns/files mdns dns/' /etc/nsswitch.conf
 ln -sf /usr/lib/systemd/system/avahi-daemon.service /etc/systemd/system/multi-user.target.wants/avahi-daemon.service

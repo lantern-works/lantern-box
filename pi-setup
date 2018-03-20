@@ -1,0 +1,19 @@
+#!/bin/bash
+
+echo "---------------------------------------------"
+echo " Starting Lantern configuration..."
+echo "---------------------------------------------"
+
+# achieve parallel results as dockerfile
+cp -rf /tmp/container/app/* /opt/lantern/
+/tmp/container/scripts/system # setup software & user accounts
+/tmp/container/scripts/hardware # configure hardware
+/tmp/container/scripts/network # setup discovery and networking
+/tmp/container/scripts/service # run lantern app server at boot
+
+# mirror docker-entrypoint
+/opt/lantern/bin/system-config
+
+echo "---------------------------------------------"
+echo " Your Lantern has been successfully configured"
+echo "---------------------------------------------"

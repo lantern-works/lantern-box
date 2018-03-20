@@ -6,9 +6,17 @@ var PouchDB = require('pouchdb-core')
 
 var express = require("express");
 var path = require("path");
+var fs = require("fs");
+
+
+var data_dir = __dirname + "/data/";
+
+if (!fs.existsSync(data_dir)) {
+    fs.mkdirSync(data_dir);
+}
 
 var LanternDB = PouchDB.defaults({
-    prefix: __dirname + "/data/",
+    prefix: data_dir,
     adapter: "websql"
 }, {
     couchConfig: {
