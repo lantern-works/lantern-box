@@ -1,29 +1,26 @@
 from stephank/archlinux:armv6-base
 
-RUN mkdir -p /tmp/install
-WORKDIR /tmp/install
-
-COPY install/users .
-RUN ./users
-
-COPY install/db .
-RUN ./db
-
-COPY install/network .
+# install scripts to prepare system
+RUN mkdir -p /tmp/scripts
+WORKDIR /tmp/scripts
+COPY scripts/hardware .
+RUN ./hardware
+COPY scripts/network .
 RUN ./network
-
-COPY install/service .
+COPY scripts/users .
+RUN ./users
+COPY scripts/db .
+RUN ./db
+COPY scripts/service .
 RUN ./service
-
+COPY scripts/config .
 COPY bin/* /usr/local/bin/
 
-WORKDIR /opt
 
 # install web server
+WORKDIR /opt
 COPY server.js package.json /opt/
 COPY public /opt/public
-
-# setup storage directory for database
 RUN mkdir -p /opt/data
 
 # expose web server port

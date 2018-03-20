@@ -1,0 +1,27 @@
+#!/bin/bash
+
+echo "#############################################"
+echo "## Hardware Setup"
+echo "#############################################"
+if [[ -f /boot/config.txt ]]; then
+    echo "configuring raspberry pi hardware..."
+
+    # update hostname
+    echo "lantern" > /etc/hostname
+
+    # enable the usb serial, this will make it easier to add any wifi credentials on the pi zero (will not work on other models).
+    grep 'dtoverlay=dwc2' /boot/config.txt >/dev/null || echo 'dtoverlay=dwc2' >> /boot/config.txt
+    grep 'modules-load=dwc2,g_serial' /boot/cmdline.txt >/dev/null || sed -i 's/.*rootwait.*/& modules-load=dwc2,g_serial/' /boot/cmdline.txt
+    ln -sf /usr/lib/systemd/system/getty@ttyGS0.service /etc/systemd/system/getty.target.wants/getty@ttyGS0.service
+
+    # enable hardware pwm
+    grep 'dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4' /boot/config.txt >/dev/null || echo 'dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4' >> /boot/config.txt
+
+    # enable HDMI hotplug
+    grep 'hdmi_force_hotplug=1' /boot/config.txt >/dev/null || echo 'hdmi_force_hotplug=1' >> /boot/config.txt
+
+    # enable SPI for LoRa HAT
+    grep 'dtparam=spi=on' /boot/config.txt >/dev/null || echo 'dtparam=spi=on' >> /boot/config.txt
+else
+    echo "skipping hardware setup within docker container..."    
+fi

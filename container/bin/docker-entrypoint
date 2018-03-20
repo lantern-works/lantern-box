@@ -1,16 +1,6 @@
 #!/bin/bash
 
-if [[ -d /opt/node_modules/ ]]; then
-    echo "using cached node_modules..."
-else
-    cd /opt/
-    npm config set unsafe-perm true
-    npm install
-    npm config set unsafe-perm false
-fi
-
-echo "now online..."
-lantern-boot
+/tmp/scripts/config
 
 echo "starting service..."
 /usr/local/bin/lantern-service &

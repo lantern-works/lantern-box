@@ -1,9 +1,21 @@
 #!/bin/bash
 
+# this script must be run through a Docker context and chroot
+# envionment variables will not load directly from a Raspberry Pi
+
 ADMIN_PASS=${ADMIN_PASS:-wins}
 WIFI_DESC=${WIFI_DESC:-Lantern}
 WIFI_SSID=${WIFI_SSID:-my-router}
 WIFI_PASS=${WIFI_PASS:-my-pass}
+
+if [[ -d /opt/node_modules/ ]]; then
+    echo "using cached node_modules..."
+else
+    cd /opt/
+    npm config set unsafe-perm true
+    npm install
+    npm config set unsafe-perm false
+fi
 
 echo "updating admin password..."
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin

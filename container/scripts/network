@@ -4,6 +4,9 @@ echo "#############################################"
 echo "## Discovery & Networking"
 echo "#############################################"
 
+# disable Signature Checks
+sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
+
 pacman -Syu --noconfirm avahi nss-mdns wpa_supplicant \
     wpa_actiond ifplugd crda dialog
 

@@ -5,6 +5,6 @@ echo "## Database & Web Server Dependencies"
 echo "#############################################"
 
 # install node.js dependencies
-pacman -Syu --noconfirm nodejs npm python2 base-devel 
+pacman -Su --noconfirm nodejs npm python2 base-devel 
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
