@@ -8,5 +8,13 @@ Our Docker image is modeled after a Raspberry Pi Zero W. The image enables us to
 make && make run
 ```
 
+### Loading On Device
+
+```bash
+make image
+```
+
+This command uses [pi-maker](https://github.com/lantern-works/pi-maker) to generate an image compatible with the RPI0W.
+
 ### Disclaimer
 This repository is under active development and not yet intended for widespread use.

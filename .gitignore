@@ -1,4 +1,5 @@
 .DS_Store
+*.img
 *node_modules
 *.tar.gz
 *.tar.xz
