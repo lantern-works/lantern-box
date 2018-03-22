@@ -8,10 +8,10 @@ WIFI_DESC=${WIFI_DESC:-Lantern}
 WIFI_SSID=${WIFI_SSID:-my-router}
 WIFI_PASS=${WIFI_PASS:-my-pass}
 
-if [[ -d /opt/node_modules/ ]]; then
+if [[ -d /opt/lantern/node_modules/ ]]; then
     echo "using cached node_modules..."
 else
-    cd /opt/
+    cd /opt/lantern/
     npm config set unsafe-perm true
     npm install
     npm config set unsafe-perm false
