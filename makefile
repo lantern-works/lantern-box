@@ -8,24 +8,25 @@ DATE := $(shell date +%s)
 CONTAINERS := $(shell docker ps -a -q)
 
 build:
-	docker build -t "lantern-core:${TAG}" ./container
+	docker build -t "lantern-box:${TAG}" ./container
 
 run:
-	docker run --name "lantern-core" -it  \
+	docker run --name "my-lantern" -it  \
 		--volume ${PWD}/container/app/node_modules:/opt/lantern/node_modules \
 		--env-file _env \
 		-p 8080:80 \
-		"lantern-core:${TAG}"
+		"lantern-box:${TAG}"
 
 image:
+	docker pull westlane/pi-maker
 	docker run -it --privileged \
 	--volume ${PWD}:/tmp \
 	--env-file _env \
-	-e IMAGE_NAME="lantern.img" \
+	-e IMAGE_NAME="flash-to-pi.img" \
 	-e COPY_DIR="/tmp/container/app" \
 	-e SCRIPT_DIR="/tmp/container/scripts" \
 	-e SETUP_SCRIPT="/tmp/pi-setup" \
-	pi-maker
+	westlane/pi-maker
 
 clean:
 	docker system prune -af
