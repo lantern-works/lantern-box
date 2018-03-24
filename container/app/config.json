@@ -1,5 +1,11 @@
 {
     "admins": {
         "admin": "defaultdbpass"
+    },
+    "httpd": {
+        "enable_cors": true
+    },
+    "cors": {
+        "origins": "*"
     }
 }
