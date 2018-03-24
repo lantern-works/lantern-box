@@ -18,7 +18,11 @@ else
 fi
 
 echo "updating admin password..."
+# system admin
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
+# pouchdb server admin
+sed -i -e "s/defaultdbpass/${ADMIN_PASS}/g" /opt/lantern/config.json
+
 
 echo "updating wireless credentials..."
 touch /etc/netctl/wlan0-SSID

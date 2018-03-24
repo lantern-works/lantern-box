@@ -10,7 +10,7 @@ build:
 	docker build -t "lantern-box:${TAG}" ./container
 
 run:
-	docker run --name "my-lantern" -it  \
+	docker run -it  \
 		--volume ${PWD}/container/app/node_modules:/opt/lantern/node_modules \
 		--env-file _env \
 		-p 8080:80 \
