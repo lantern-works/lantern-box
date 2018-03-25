@@ -1,13 +1,15 @@
 MAKEFLAGS += --warn-undefined-variables
 SHELL := /bin/bash
-.DEFAULT_GOAL := build
 
 TAG?=latest
 DATE := $(shell date +%s)
 CONTAINERS := $(shell docker ps -a -q)
 
+
+.PHONY: build
+
 build:
-	docker build -t "lantern-box:${TAG}" ./container
+	docker build --build-arg CACHEBUST="${DATE}" -t "lantern-box:${TAG}" ./container
 
 run:
 	docker run -it  \
