@@ -27,14 +27,6 @@ var app = express();
 var port = (process.env.TERM_PROGRAM ? 8000 : 80);
 app.disable("x-powered-by");
 
-//------------------------------------ Captive Portal
-app.get("/", function(req,res) {
-    res.sendFile(path.resolve(__dirname + "/public/index.html"));
-});
-
-var static_path = path.resolve(__dirname + "/public/static");
-app.use("/static", express.static(static_path));
-
 
 var cors = function(req, res, next) {
     if (!process.env.ORIGINS) {
@@ -48,10 +40,29 @@ var cors = function(req, res, next) {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'accept, authorization, content-type, origin, referer, x-csrf-token');
     res.header('Access-Control-Allow-Credentials', true);
-    return next();
+
+
+    //intercepts OPTIONS method
+    if ('OPTIONS' === req.method) {
+      //respond with 200
+      res.send(200);
+    }
+    else {
+    //move on
+      next();
+    }
 };
 
-//------------------------------------ PouchDB
+var static_path = path.resolve(__dirname + "/public/static");
+
+//------------------------------------ Routes
+
+app.get("/", cors, function(req,res) {
+    res.sendFile(path.resolve(__dirname + "/public/index.html"));
+});
+
+app.use("/static", express.static(static_path));
+
 app.use("/", cors, require("express-pouchdb")(LanternDB));
 
 
