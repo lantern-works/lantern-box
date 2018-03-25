@@ -3,10 +3,6 @@
         "admin": "{{db_pass}}"
     },
     "httpd": {
-        "bindAddress": "0.0.0.0",
-        "enable_cors": true
-    },
-    "cors": {
-        "origins": "*"
+        "bind_address": "0.0.0.0"
     }
 }
