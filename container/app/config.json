@@ -1,8 +1,9 @@
 {
     "admins": {
-        "admin": "defaultdbpass"
+        "admin": "{{db_pass}}"
     },
     "httpd": {
+        "bindAddress": "0.0.0.0",
         "enable_cors": true
     },
     "cors": {

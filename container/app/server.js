@@ -1,8 +1,10 @@
+console.log("starting up database server...");
+
 var PouchDB = require('pouchdb-core')
-  .plugin(require('pouchdb-adapter-node-websql'))
-  .plugin(require('pouchdb-adapter-http'))
-  .plugin(require('pouchdb-mapreduce'))
-  .plugin(require('pouchdb-replication'));
+    .plugin(require('pouchdb-adapter-node-websql'))
+    .plugin(require('pouchdb-adapter-http'))
+    .plugin(require('pouchdb-mapreduce'))
+    .plugin(require('pouchdb-replication'));
 
 var express = require("express");
 var path = require("path");
@@ -18,10 +20,6 @@ if (!fs.existsSync(data_dir)) {
 var LanternDB = PouchDB.defaults({
     prefix: data_dir,
     adapter: "websql"
-}, {
-    couchConfig: {
-        bind: "0.0.0.0"
-    }
 });
 
 var app = express();
@@ -42,5 +40,15 @@ app.use("/", require("express-pouchdb")(LanternDB));
 
 
 //------------------------------------ Initialize
-console.log("starting lantern server on port %s ...", port);
-app.listen(port);
+app.listen(port, function() {
+    console.log("lantern server is ready on port %s ...", port);
+
+    // make sure we have the database to work with
+    var db_config = require("./config.json");
+    var db_uri = "http://admin:"+db_config.admins.admin+"@localhost:" + port;
+    var my_db = new PouchDB(db_uri + "/lantern");
+    my_db.info().then(function(response) {
+        console.log("database info:");
+        console.log(response);
+    });
+});

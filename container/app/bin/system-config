@@ -4,6 +4,7 @@
 # envionment variables will not load directly from a Raspberry Pi
 
 ADMIN_PASS=${ADMIN_PASS:-wins}
+DB_PASS=${DB_PASS:-my-db-pass}
 WIFI_DESC=${WIFI_DESC:-Lantern}
 WIFI_SSID=${WIFI_SSID:-my-router}
 WIFI_PASS=${WIFI_PASS:-my-pass}
@@ -18,10 +19,11 @@ else
 fi
 
 echo "updating admin password..."
-# system admin
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
-# pouchdb server admin
-sed -i -e "s/defaultdbpass/${ADMIN_PASS}/g" /opt/lantern/config.json
+
+
+echo "updating database config..."
+sed -i -e "s/{{db_pass}}/${DB_PASS}/g" /opt/lantern/config.json
 
 
 echo "updating wireless credentials..."
