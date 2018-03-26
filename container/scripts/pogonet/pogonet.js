@@ -4,9 +4,12 @@ var cmd 	= require('node-cmd');
 var fs  	= require('fs');
 var sleep 	= require('sleep');
 
-var LANTERN_SSID="airmoo2.4"
-var LANTERN_INTERNET_SSID="Lantern-Internet"
-var POLLENATE_MIN_SECONDS=10; //should be minutes, but seconds useful for debugging; multiply by 60 later
+var LANTERN_SSID="lantern"
+//LANTERN_SSID="airmoo2.4" //override with jeff's home AP for testing
+var LANTERN_INTERNET_SSID="lantern-internet"
+
+//How long should we stay in AP mode before dropping out to pollenate?
+var POLLENATE_MIN_SECONDS=20; //should be minutes, but seconds useful for debugging; multiply by 60 later
 var POLLENATE_MAX_SECONDS=30;
 
 function boot() {
@@ -20,7 +23,7 @@ function pollenateLantern(ssid, mac) {
     "/etc/netctl/wlan0-lantern",
     "Description=Lantern\nInterface=wlan0\nConnection=wireless\nSecurity=wpa\nESSID=\""+
       ssid +
-      "\"\nIP=dhcp\nAP=" + mac,
+      "\"\nIP=dhcp\nAP=" + mac + '\n',
     function(err) {
       if(err) {
         return console.log(err);
@@ -32,12 +35,11 @@ function pollenateLantern(ssid, mac) {
         function(err, data, stderr) {
           if(err) {
             console.log(stderr);
-            pollenateNextLantern();
           }
           else{
+            console.log("Beginning PouchDB sync (TODO)");
             //TODO: How do we kick off the pouchDB sync here?
-            console.log("Beginning PouchDB sync (TBI)");
-            sleep.sleep(10);  //simulate a delay for when it would be actually syncing
+            sleep.sleep(23);  //simulate a delay for when it would be actually syncing
             //TODO: How do we know when pouchDB sync is done here? monitor deleted file?
             console.log("Done with pouchDB sync...time for next lantern");
           }
@@ -67,21 +69,28 @@ var curLanternIndex=0;
 var nearbyLanterns;
 function pollenateStart() {
   //go through list of nearby lanterns, sorted by strongest signal first
-  //BUGBUG: currently connected lantern will be at bottom of list
-  console.log("pollenateStart()");
+  //console.log("pollenateStart()");
+  //process.exit(); //debug: uncomment to manually investigate wlan state at this point
+  var command = 'ifconfig wlan0 up; sleep 5; '+__dirname+'/macs.sh ' + LANTERN_SSID;
+  //console.log("Finding lanterns with: "+command);
   cmd.get(
-    __dirname+'/macs.sh',
+    command,
     function(err, data, stderr) {
-      console.log("DEBUG MACS LIST: "+data);
-      nearbyLanterns = data.split('\n');
-      console.log("Found " + nearbyLanterns.length.toString() + " new Lanterns"+nearbyLanterns.toString());
-      curLanternIndex=0;
-      if(nearbyLanterns.length > 0) {
-        pollenateNextLantern();
+      if(err) { //BUGBUG - this is now probably just the return of sleep, which won't fail
+        console.log("ERROR macs.sh failure: "+err);
       }
       else {
-        console.log("No other lanterns in range: switching to AP mode.");
-        lanternModeAP();
+        nearbyLanterns = data.split('\n');
+        nearbyLanterns.pop();  //get rid of final blank line
+        curLanternIndex=0;
+        if(nearbyLanterns.length > 0) {
+          console.log("Found " + nearbyLanterns.length.toString() + " new Lanterns:\n"+nearbyLanterns.toString());
+          pollenateNextLantern();
+        }
+        else {
+          console.log("No other lanterns in range: switching to AP mode.");
+          lanternModeAP();
+        }
       }
     }
   );
@@ -92,7 +101,7 @@ function lanternModePollenate() {
 
   //first shut down AP mode
   cmd.get(
-    'create_ap --stop wlan0; sleep 5',
+    'create_ap --stop wlan0; sleep 5',  //TODO: Don't shut down before scanning for nearby lanterns
     function(err, data, stderr) {
       if(err) {
         console.log("Error shutting down AP: "+stderr);

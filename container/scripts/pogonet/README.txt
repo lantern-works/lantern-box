@@ -12,8 +12,6 @@ After building the pi image, manually install the below scripts on the booted pi
 
 Then you can just run them manually directly on the lantern.
 
-BUGBUG: The mac address script is broken, since it is too sensitive to the format of the iw scan output - some things may break badly because of this.
-
 
 AP.SH
 Switches lantern into access point (AP) mode:
@@ -32,7 +30,7 @@ Only used for manual proof-of-concept, pogonet.sh does not call this.
 
 
 POGONET.SH
-Arranges going back and forth on a (currently) random timer, between AP mode and POLLENATE to sync with other lanterns, by serially connecting to lanterns from highest to lowest signal strength. I only have one lantern up, so this is currently set to just find and "pollenate" my home router ("airmoo2.4"). This setting is a define at the top of the script, so you can change it to what you like.
+Arranges going back and forth on a (currently) random timer, between AP mode and POLLENATE to sync with other lanterns, by serially connecting to lanterns from highest to lowest signal strength. I only have one lantern up, so this is largely untested with multiple lanterns - it will connect to my home router. Once I can build images again, I'll set up with real lanterns.
 
 the system script should do this automatically when building image, but if you're starting from another branch, you need to install some node modules on the lantern:
 
@@ -43,10 +41,14 @@ When you run it, you'll get an ongoing status as it toggles between AP and POLLE
 This is an extreme alpha version - I'm sure there are serious bugs, essentially zero error checking, and many features to be added.
 
 
-MACS.SH
+MACS.SH ssid
 Simple bash script that creates the list of lantern mac addresses sorted by signal strength.
 
 Called by pollenate.sh
+
+example to show nearby lanterns:
+
+	sudo ./macs.sh lantern
 
 
 RESETWLAN0.SH
