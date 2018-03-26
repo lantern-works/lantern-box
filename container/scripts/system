@@ -13,6 +13,9 @@ pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     nodejs npm python2 base-devel \
     avahi nss-mdns wpa_supplicant \
     wpa_actiond ifplugd crda dialog
+
+#install necessary node.js modules for pogonet 
+npm install --unsafe-perm node-cmd fs sleep
     
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
