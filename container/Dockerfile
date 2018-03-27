@@ -1,5 +1,7 @@
 from stephank/archlinux:armv6-base
 
+EXPOSE 80
+
 # install scripts to prepare system
 RUN mkdir -p /tmp/scripts
 WORKDIR /tmp/scripts
@@ -12,8 +14,9 @@ RUN ./network
 COPY scripts/service .
 RUN ./service
 
+
 # install web server
+ARG CACHEBUST=1
 COPY app /opt/lantern
-EXPOSE 80
 WORKDIR /opt/lantern
 ENTRYPOINT "/opt/lantern/bin/docker-entrypoint"

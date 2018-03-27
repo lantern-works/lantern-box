@@ -1,3 +1,4 @@
 WIFI_SSID=<my network name here>
 WIFI_PASS=<my wifi pass here>
 ADMIN_PASS=wins
+DB_PASS=<pick a unique database password>
