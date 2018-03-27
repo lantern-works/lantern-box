@@ -1,10 +1,10 @@
 # Place your wireless credentials here so the Lantern can connect.
 # This allows you to SSH into the box and sync data from the cloud:
-WIFI_SSID=<my network name here>
-WIFI_PASS=<my wifi pass here>
+WIFI_SSID=my_wifi_network_name
+WIFI_PASS=my_wifi_pass
 
 # Choose an admin password so you can SSH into your box:
-ADMIN_PASS=<my ssh / user password>
+ADMIN_PASS=my_user_pass
 
 # Choose a database admin password to protect data on the device:
-DB_PASS=<my database admin password>
+DB_PASS=my_db_pass

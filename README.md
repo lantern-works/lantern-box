@@ -2,6 +2,7 @@
 
 The Lantern is a portable server for decentralized web applications. This repository contains all software and setup scripts required to build and adapt your own Lantern device.
 
+To get started, rename your "\_env.example" file to "\_env" and modify the placeholder values to meet your needs.
 
 ### Run a Local Server
 
