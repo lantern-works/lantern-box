@@ -2,6 +2,8 @@
 
 # this script must be run through a Docker context and chroot
 # envionment variables will not load directly from a Raspberry Pi
+# This script must be run through a Docker context and chroot.
+# Environment variables will not load directly from a Raspberry Pi.
 
 ADMIN_PASS=${ADMIN_PASS:-wins}
 WIFI_DESC=${WIFI_DESC:-Lantern}

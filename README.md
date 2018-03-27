@@ -1,25 +1,34 @@
 # lantern-box
 
-Our Docker image is modeled after a Raspberry Pi Zero W. The image enables us to cache our software dependencies and test as much logic as possible without loading to a physical device.
+The Lantern is a portable server for decentralized web applications. This repository contains all software and setup scripts required to build and adapt your own Lantern device.
 
-### Getting Started
+
+### Run a Local Server
+
+Our Docker container is modeled after a Raspberry Pi Zero W. This enables us to cache our software dependencies and test as much logic as possible without loading to a physical device. To setup a local instance:
 
 ```bash
 make && make run
 ```
 
-### Loading On Device
+The resulting server will be available at: http://localhost:8080
+
+### Setup Your Raspberry Pi Zero W
+
+This command uses [pi-maker](https://github.com/lantern-works/pi-maker) to create the image:
 
 ```bash
 make image
 ```
 
-This command uses [pi-maker](https://github.com/lantern-works/pi-maker) to generate an image compatible with the RPI0W.
+
+[Download Etcher](http://etcher.io) and use this to flash your image onto a MicroSD card 8GB or greater. Your image will be named "flash-to-pi.img" by default and will be located in a "build" folder.
+
 
 
 ### Requirements
 
-A local [Docker](https://www.docker.com/community-edition) environment is required in order to build an image.
+A local [Docker](https://www.docker.com/community-edition) environment is required to begin.
 
 Ubuntu users should install these packages before building an image:
 ```bash
