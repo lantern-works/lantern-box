@@ -11,7 +11,7 @@ sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
 pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     bash-completion termite-terminfo \
     nodejs npm python2 base-devel \
-    avahi nss-mdns wpa_supplicant \
+    create_ap avahi nss-mdns wpa_supplicant \
     wpa_actiond ifplugd crda dialog
 
 #install necessary node.js modules for pogonet 
