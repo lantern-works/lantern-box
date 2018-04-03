@@ -13,12 +13,14 @@ WIFI_PASS=${WIFI_PASS:-my-pass}
 
 if [[ -d /opt/lantern/node_modules/ ]]; then
     echo "using cached node_modules..."
-else
-    cd /opt/lantern/
-    npm config set unsafe-perm true
-    npm install
-    npm config set unsafe-perm false
 fi
+
+# run an install just to make sure we have latest packages
+cd /opt/lantern/
+npm config set unsafe-perm true
+npm install
+npm config set unsafe-perm false
+
 
 echo "updating admin password..."
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin

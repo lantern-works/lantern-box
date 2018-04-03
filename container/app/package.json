@@ -8,7 +8,9 @@
         "pouchdb-adapter-http": "*",
         "pouchdb-mapreduce": "*",
         "pouchdb-replication": "*",
-        "express-pouchdb": "*"
+        "express-pouchdb": "*",
+        "node-cmd": "*",
+        "sleep": "*"
     },
     "scripts": {
         "start": "node server.js"

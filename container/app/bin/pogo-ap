@@ -1,4 +1,4 @@
-./resetwlan0.sh
+./pogo-resetwlan0
 sleep 1
 echo "About to create_ap"
 netctl stop wlan0-SSID
