@@ -7,11 +7,9 @@ module.exports = function DatabaseRoute() {
     if (!fs.existsSync(data_dir)) {
         fs.mkdirSync(data_dir);
     }
-
-    var LanternDB = PouchDB.defaults({
+    
+    return require("express-pouchdb")(PouchDB.defaults({
         prefix: data_dir,
         adapter: "websql"
-    });
-
-    return require("express-pouchdb")(LanternDB);
+    }));
 }();

@@ -4,8 +4,7 @@ var utils = require("./utils");
 module.exports = function Stor(uri) {
 
     var sync;
-    var remote_db = new PouchDB(utils.getCloudAddress());
-    var local_db = new PouchDB(uri);
+    var db = new PouchDB(uri);
 
     var self = {
         startSync: function() {
@@ -15,7 +14,8 @@ module.exports = function Stor(uri) {
                 return;
             }
 
-            sync = local_db.sync(remote_db, {
+            var remote_db = new PouchDB(utils.getCloudAddress());
+            sync = db.sync(remote_db, {
               live: true,
               retry: true
             }).on('change', function (change) {
@@ -51,10 +51,14 @@ module.exports = function Stor(uri) {
 
     // optimistically start sync with cloud
     // even if we don't have internet access  
-    local_db.info().then(function(response) {
-        console.log("[stor] database starting doc count: " + response.doc_count);
-        console.log("[stor] database update sequence: " + response.update_seq);
-    });
+    db.info()
+        .then(function(response) {
+            console.log("[stor] database starting doc count: " + response.doc_count);
+            console.log("[stor] database update sequence: " + response.update_seq);
+        })
+        .catch(function(err) {
+            console.log(err);
+        });
 
     return self;
 };
