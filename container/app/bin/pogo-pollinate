@@ -1,3 +1,9 @@
+#!/usr/bin/bash
+
+echo "#############################################"
+echo "## Joining Nearby Wifi"
+echo "#############################################"
+
 create_ap --stop wlan0
 sleep 5
 #systemctl start netctl-auto@wlan0

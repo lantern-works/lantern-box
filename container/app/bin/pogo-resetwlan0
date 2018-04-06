@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+
 echo "Starting crazy reset of wlan0..."
 systemctl stop netctl-auto@wlan0
 sleep 1
