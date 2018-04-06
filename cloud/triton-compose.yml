@@ -1,0 +1,9 @@
+db_blue:
+    image: westlane/lantern-box
+    restart: always
+    ports:
+        - 80
+    environment:
+        - CLOUD=true
+    labels:
+        - triton.cns.services=lantern

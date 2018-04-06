@@ -4,14 +4,17 @@ var utils = require("./utils");
 module.exports = function Stor(uri) {
 
     var sync;
-    var remote_db = new PouchDB(utils.getCloudAddress(
-            "antsellyzonessedgediduch", 
-            "7d816bafd3bb33d9bc6269f0361fab9ebf0db3a2"
-        ));
+    var remote_db = new PouchDB(utils.getCloudAddress());
     var local_db = new PouchDB(uri);
 
     var self = {
         startSync: function() {
+
+            if (process.env.CLOUD) {
+                console.log("[stor] skip sync since this is in the cloud...");
+                return;
+            }
+
             sync = local_db.sync(remote_db, {
               live: true,
               retry: true
@@ -25,6 +28,10 @@ module.exports = function Stor(uri) {
                 else {
                     console.log("[stor] change: ", change);
                 }
+            }).on('paused', function (info) {
+                console.log("[stor] paused sync... no internet?");
+            }).on('active', function (info) {
+                console.log("[stor] resumed sync... internet is back?");
             }).on('error', function (err) {
                 console.log("[stor] err: ", err);
             })
@@ -35,6 +42,9 @@ module.exports = function Stor(uri) {
                     console.log("[stor] cloud sync stopped");
                 });
                 sync.cancel();
+            }
+            else {
+                console.log("[stor] can't stop non-existing sync");
             }
         }
     };
