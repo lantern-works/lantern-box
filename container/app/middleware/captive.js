@@ -5,7 +5,7 @@ module.exports = function(req, res, next) {
     console.log("[server] request from: " + ip + " (" + agent + ")");
 
     // ios
-    if (agent == "CaptiveNetworkSupport") {
+    if (agent.indexOf("CaptiveNetworkSupport") !== -1) {
         res.redirect("/static/hotspot.html")
     }
     else {
