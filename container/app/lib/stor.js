@@ -53,8 +53,7 @@ module.exports = function Stor(uri) {
     // even if we don't have internet access  
     local_db.info().then(function(response) {
         console.log("[stor] database starting doc count: " + response.doc_count);
-        console.log("[stor] database update sequence:" + response.update_seq);
-        self.startSync();
+        console.log("[stor] database update sequence: " + response.update_seq);
     });
 
     return self;

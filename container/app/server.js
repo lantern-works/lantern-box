@@ -1,6 +1,7 @@
 var express = require("express");
 var path = require("path");
 var cors = require("./middleware/cors");
+var captive = require("./middleware/captive");
 var utils = require("./lib/utils");
 var Stor = require("./lib/stor");
 var db_config = require("./config.json");
@@ -13,7 +14,8 @@ var static_path = path.resolve(__dirname + "/public/static");
 
 
 //--------------------------------------------------------------------- Routes
-app.get("/", cors, function(req,res) {
+
+app.get("/", captive, cors, function(req,res) {
     res.sendFile(path.resolve(__dirname + "/public/index.html"));
 });
 app.use("/static", express.static(static_path));

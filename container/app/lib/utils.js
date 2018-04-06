@@ -15,7 +15,7 @@ module.exports = function Utils() {
     }
 
     self.checkInternet = function(cb) {
-        dns.lookup(db_domain,function(err) {
+        dns.lookup("lantern.works",function(err) {
             if (err && err.code == "ENOTFOUND") {
                 cb(false);
             } else {

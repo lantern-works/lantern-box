@@ -36,5 +36,8 @@ Ubuntu users should install these packages before building an image:
 apt-get install binfmt-support qemu-user-static make
 ```
 
+### Reference
+- [WiFi Captive Portal](https://andrewwippler.com/2016/03/11/wifi-captive-portal/)
+
 ### Disclaimer
 This repository is under active development and not yet intended for widespread use.
