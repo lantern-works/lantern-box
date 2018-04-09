@@ -13,7 +13,8 @@ cp -rf /tmp/container/app/* /opt/lantern/
 
 # mirror docker-entrypoint
 /opt/lantern/bin/system-config
-
+chown -R admin /opt/lantern
+chgrp -R wheel /opt/lantern
 echo "---------------------------------------------"
 echo " Your Lantern has been successfully configured"
 echo "---------------------------------------------"

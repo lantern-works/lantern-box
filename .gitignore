@@ -5,3 +5,4 @@
 *.tar.xz
 *~
 _env
+tmp
