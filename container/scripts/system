@@ -12,11 +12,19 @@ pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     bash-completion termite-terminfo \
     nodejs npm python2 base-devel \
     create_ap avahi nss-mdns wpa_supplicant \
-    wpa_actiond ifplugd crda dialog
-    
+    wpa_actiond ifplugd crda dialog wget
+
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
-    
+
+# # install C library for Broadcom BCM 2835 chip (for RPI GPIO)
+cd /tmp
+wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.55.tar.gz
+tar zxvf bcm2835-1.*.tar.gz
+cd bcm2835-1.55
+./configure
+make
+make install
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin
 echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
