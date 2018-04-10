@@ -25,6 +25,14 @@ cd bcm2835-1.55
 ./configure
 make
 make install
+
+# # install RadioHead Packet Radio library
+cd /tmp
+wget https://github.com/hallard/RadioHead/archive/master.zip
+unzip master.zip
+mv RadioHead-master /opt/radiohead
+
+
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin
 echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
