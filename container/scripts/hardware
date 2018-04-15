@@ -26,6 +26,9 @@ if [[ -f /boot/config.txt ]]; then
 
     # enable SPI for LoRa HAT
     grep 'dtparam=spi=on' /boot/config.txt >/dev/null || echo 'dtparam=spi=on' >> /boot/config.txt
+    grep 'dtparam=i2c=on' /boot/config.txt >/dev/null || echo 'dtparam=i2c=on' >> /boot/config.txt
+
+
 
     # for LoRa console communication
     grep 'enable_uart=1' /boot/config.txt >/dev/null || echo 'enable_uart=1' >> /boot/config.txt
