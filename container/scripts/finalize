@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "#############################################"
-echo "## System Service"
+echo "## Finalize Setup "
 echo "#############################################"
 
 touch /etc/systemd/system/lantern.service
@@ -17,3 +17,12 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 systemctl enable lantern.service
+
+# create admin user
+useradd -m -g wheel -s /usr/bin/zsh admin
+echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
+
+# set zsh as the default shell
+chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
+chown admin. /home/admin/.zshrc
+echo 'cd /opt/lantern/' >> /home/admin/.zshrc

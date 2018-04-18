@@ -5,14 +5,14 @@ EXPOSE 80
 # install scripts to prepare system
 RUN mkdir -p /tmp/scripts
 WORKDIR /tmp/scripts
-COPY scripts/system .
-RUN ./system
 COPY scripts/hardware .
 RUN ./hardware
+COPY scripts/software .
+RUN ./software
 COPY scripts/network .
 RUN ./network
-COPY scripts/service .
-RUN ./service
+COPY scripts/finalize .
+RUN ./finalize
 
 
 # install web server

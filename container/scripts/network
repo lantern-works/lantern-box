@@ -4,7 +4,7 @@ echo "#############################################"
 echo "## Discovery & Networking"
 echo "#############################################"
 
-# Install zero-conf to make the pi easier to find on the network
+# zero-conf to make the pi easier to find on the network
 sed -i '/^hosts: /s/files dns/files mdns dns/' /etc/nsswitch.conf
 ln -sf /usr/lib/systemd/system/avahi-daemon.service /etc/systemd/system/multi-user.target.wants/avahi-daemon.service
 
