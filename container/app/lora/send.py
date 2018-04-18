@@ -2,11 +2,36 @@
 import sys
 import rf95
 import time
+import requests
+
+seq = 0
+db_uri = "http://localhost/db/lantern/"
+lora = rf95.RF95(0, 25, None, 13)
+
+def poll():
+    global seq
+    uri = db_uri+"_changes?include_docs=true&since="+str(seq)
+    r2 = requests.get(uri, auth=("admin", "pins"))
+
+    if r2.status_code == 200:
+        data = r2.json()
+        seq = data.get("last_seq")
+        for change in data.get("results"):
+            if change.has_key("doc"):
+                doc = change.get("doc")
+                send(str(doc))
+        time.sleep(10)
+        poll()
+
+def send(val):
+    print("sending: " + val)
+    lora.send(lora.str_to_data(val))
+    lora.wait_packet_sent()
+    transmit_len = len(val.encode("utf8"))
+    print("bytes sent: " + str(transmit_len))
 
 def main():
-
-    # setup lora
-    lora = rf95.RF95(0, 25, None, 13)
+    global seq
     print("------------------------------------------------------")
     if not lora.init(): # returns True if found
         print("RF95 not found or not ready")
@@ -28,18 +53,16 @@ def main():
         lora.set_tx_power(15)
 
         # send test data
-        lora.send(lora.bytes_to_data([0x01, 0x02, 0x03]))
-        lora.wait_packet_sent()
-        print("sent data")
-
         time.sleep(2);
+        send('[lantern:blue-nile]')
 
-        lora.send(lora.str_to_data('{"hello":"world"}'))
-        lora.wait_packet_sent()
-        print("sent string")
 
-        # cleanup lora module
-        lora.cleanup()
+        r1 = requests.get(db_uri)
+        seq = r1.json().get("update_seq")
+        print("watching database from: " + str(seq))
+
+
+        poll()
 
     except KeyboardInterrupt:
         print("closing...")

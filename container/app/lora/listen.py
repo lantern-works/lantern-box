@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+from __future__ import print_function
 import sys
 import string
 import rf95
@@ -35,7 +36,7 @@ def main():
             data = lora.recv()
             print("---  data  ---")
             for i in data:
-                print(str(i).zfill(3) + " | " + chr(i))
+                print(chr(i), end="")
             print("---  /data ---")
 
     except KeyboardInterrupt:
