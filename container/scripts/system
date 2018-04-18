@@ -22,6 +22,12 @@ ln -s /usr/bin/python2-config /bin/python-config
 wget https://raw.githubusercontent.com/lantern-works/pyRF95/master/rf95.py -P /usr/lib/python2.7/site-packages/
 pip2 install RPi.GPIO spidev requests
 
+
+# install SublimeText remote editor for dev convenience
+wget -O /usr/local/bin/rsub \https://raw.github.com/aurora/rmate/master/rmate
+chmod a+x /usr/local/bin/rsub
+
+
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin
 echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
