@@ -1,5 +1,6 @@
 var express = require("express");
 var path = require("path");
+var execSync = require("child_process").execSync;
 var cors = require("./middleware/cors");
 var rewrite = require("./middleware/rewrite");
 var captive = require("./middleware/captive");
@@ -25,11 +26,14 @@ console.log("[server] starting server...");
 utils.checkInternet(function(is_connected) {
     if (is_connected) {
         console.log("[server] internet access: active");
+        console.log("[server] checking for updated web platform");
+        var stdout = execSync(__dirname + "/bin/platform-update");
+        console.log("[server] latest web platform loaded");
     }
     else {
         console.log("[server] internet access: unavailable");
     }
-})
+});
 
 app.listen(port, function() {
     console.log("[server] ready on port %s ...", port);
