@@ -11,34 +11,41 @@ WIFI_DESC=${WIFI_DESC:-Lantern}
 WIFI_SSID=${WIFI_SSID:-my-router}
 WIFI_PASS=${WIFI_PASS:-my-pass}
 
-if [[ -d /opt/lantern/node_modules/ ]]; then
-    echo "using cached node_modules..."
-fi
 
-cd /opt/lantern/
-npm config set unsafe-perm true
-npm install
-npm config set unsafe-perm false
+echo "encrypting wifi pass..."
+WIFI_PASS=`wpa_passphrase ${WIFI_SSID} <<< ${WIFI_PASS} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
+
+
+echo "saving config to disk..."
+touch /opt/lantern/config.yml
+chmod go-rw /opt/lantern/config.yml
+cat <<EOF >"/opt/lantern/config.yml"
+WIFI_SSID: ${WIFI_SSID}
+WIFI_PASS: ${WIFI_PASS}
+DB_PASS: ${DB_PASS}
+EOF
+
+
+echo "updating pouchdb server config..."
+sed -i -e "s/{{db_pass}}/${DB_PASS}/g" /opt/lantern/config.json
+chmod go-rw /opt/lantern/config.json
+
+
+echo "updating netctl wlan0 config..."
+/opt/lantern/bin/wifi-update
 
 
 echo "updating admin password..."
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
 
 
-echo "updating database config..."
-sed -i -e "s/{{db_pass}}/${DB_PASS}/g" /opt/lantern/config.json
+if [[ -d /opt/lantern/node_modules/ ]]; then
+    echo "using cached node_modules..."
+fi
 
+cd /opt/lantern/
+sudo chmod -R o-rwx /opt/lantern
+npm config set unsafe-perm true
+npm install
+npm config set unsafe-perm false
 
-echo "updating wireless credentials..."
-touch /etc/netctl/wlan0-SSID
-cat <<EOF >"/etc/netctl/wlan0-SSID"
-Description="${WIFI_DESC}"
-Interface=wlan0
-Connection=wireless
-Security=wpa
-ESSID="${WIFI_SSID}"
-IP=dhcp
-Key="${WIFI_PASS}"
-EOF
-
-echo "using network: ${WIFI_SSID}"
