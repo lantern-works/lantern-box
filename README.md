@@ -39,5 +39,7 @@ apt-get install binfmt-support qemu-user-static make
 ### Reference
 - [WiFi Captive Portal](https://andrewwippler.com/2016/03/11/wifi-captive-portal/)
 
+- [LoRa Time Slots](http://www.daveakerman.com/?p=1850)
+- [LoRa Formats](https://www.open-electronics.org/using-lora-shield-in-packet-mode/)
 ### Disclaimer
 This repository is under active development and not yet intended for widespread use.
