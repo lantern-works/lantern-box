@@ -31,15 +31,18 @@ def main():
         lora.set_frequency(freq)
         lora.set_tx_power(15)
         time.sleep(2);
-        
+
          # set frequency
         if len(sys.argv) > 1:
-            send(sys.argv)
+            send(str(sys.argv[1]))
         else:
             # send test data
             send('hello::world')
 
     except KeyboardInterrupt:
+        print("\n")
+
+    finally:
         print("closing...")
         # clean up
         lora.cleanup()

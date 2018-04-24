@@ -36,6 +36,9 @@ def main():
             print("---  /data ---")
 
     except KeyboardInterrupt:
+        print("\n")
+
+    finally:
         print("closing...")
         # clean up
         lora.cleanup()

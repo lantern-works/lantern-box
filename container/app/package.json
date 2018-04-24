@@ -12,6 +12,7 @@
         "js-yaml": "*"
     },
     "scripts": {
-        "start": "node server.js"
+        "start": "node server.js",
+        "dispatch": "node dispatch.js"
     }
 }

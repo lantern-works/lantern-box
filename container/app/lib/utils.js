@@ -2,7 +2,7 @@ var path = require("path");
 var fs = require("fs");
 var dns = require("dns");
 var yaml = require('js-yaml');
-var execSync = require("child_process").execSync;
+var spawn = require('child_process').spawn;
 
 module.exports = function Utils() {
 
@@ -44,7 +44,19 @@ module.exports = function Utils() {
     };
 
     self.loraBroadcast = function() {
-        var stdout = execSync(path.resolve(__dirname + "/../bin/lora-broadcast"));
+        var program = spawn(path.resolve(__dirname + "/../bin/lora-broadcast"));
+
+        program.stdout.on('data', function (data) {
+          console.log('stdout: ' + data.toString());
+        });
+
+        program.stderr.on('data', function (data) {
+          console.log('stderr: ' + data.toString());
+        });
+
+        program.on('exit', function (code) {
+          console.log('child process exited with code ' + code.toString());
+        });
     };
     
     return self; 
