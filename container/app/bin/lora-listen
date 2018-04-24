@@ -5,6 +5,8 @@ import string
 import rf95
 
 def main():
+    
+    freq = 434.00
 
     # setup lora
     lora = rf95.RF95(0, 25, None, 13)
@@ -18,12 +20,6 @@ def main():
     print("------------------------------------------------------")
         
     try:
-        # set frequency
-        if len(sys.argv) > 1:
-            freq = float(sys.argv)
-        else:
-            freq = 434.00
-
         print("frequency = " + str(freq))
         lora.set_frequency(freq)
 
