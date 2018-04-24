@@ -6,9 +6,9 @@ module.exports = function(req, res, next) {
 
     // ios
     if (agent.indexOf("CaptiveNetworkSupport") !== -1) {
-        res.redirect("/static/hotspot.html")
+        res.redirect("/static/hotspot.html");
     }
     else {
         return next();
     }
-}
+};

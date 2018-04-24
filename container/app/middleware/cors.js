@@ -5,7 +5,6 @@ module.exports = function Cors(req, res, next) {
     var origin = req.headers.origin;
     if(allowed_origins.indexOf(origin) > -1){
          res.setHeader('Access-Control-Allow-Origin', origin);
-         console.log(origin);
     }
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'accept, authorization, content-type, origin, referer, x-csrf-token');
