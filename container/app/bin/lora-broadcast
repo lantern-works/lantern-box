@@ -2,51 +2,61 @@
 import sys
 import rf95
 import time
+from persistqueue import FIFOSQLiteQueue
 
+freq = 434.00
 lora = rf95.RF95(0, 25, None, 13)
+q = FIFOSQLiteQueue(path="/tmp/messages-sqlite")
+did_init = False
 
-def send(val):
-    print("sending: " + val)
-    lora.send(lora.str_to_data(val))
-    lora.wait_packet_sent()
-    transmit_len = len(val.encode("utf8"))
-    print("bytes sent: " + str(transmit_len))
 
-def main():
+def isQueueEmpty(queue):
+    return (len(queue) == 0)
 
-    print("------------------------------------------------------")
-    if not lora.init(): # returns True if found
-        print("RF95 not found or not ready")
-        lora.cleanup()
-        quit(1)
-    else:
-        print("RF95 LoRa Ready")
-    print("------------------------------------------------------")
-        
+def isLoRaBusy():
+    lora.spi.open(0,lora.cs)
+    current_mode = lora.spi_read(rf95.REG_01_OP_MODE)
+    print(current_mode)
+    if (current_mode == 128 or current_mode == 129):
+        return True
+
+if __name__ == '__main__':
     try:
-        freq = 434.00
+        if ( isLoRaBusy() ):
+            print("RF95 is in use elsewhere...")
+            quit(1)
+        elif not lora.init(): # returns True if found
+            print("RF95 not found or not ready")
+            lora.cleanup()
+            quit(1)
+        else:
+            if len(sys.argv) > 1:
+                q.put(str(sys.argv[1]))
+            else:
+                # send test data
+                q.put("hello world")
+                q.put("123")
+            did_init = True
 
-       
-        print("frequency = " + str(freq))
         lora.set_frequency(freq)
         lora.set_tx_power(15)
-        time.sleep(2);
 
-         # set frequency
-        if len(sys.argv) > 1:
-            send(str(sys.argv[1]))
-        else:
-            # send test data
-            send('hello::world')
+        while not isQueueEmpty(q):
+            item = q.get()
+            print("-----------------")
+            print("sending@"  + str(freq) + "mhz: " + item)
+            lora.send(lora.str_to_data(item))
+            lora.wait_packet_sent()
+            transmit_len = len(item.encode("utf8"))
+            print("bytes sent: " + str(transmit_len))
+            print("-----------------")
+            time.sleep(2)
+            q.task_done()
 
     except KeyboardInterrupt:
         print("\n")
-
     finally:
-        print("closing...")
         # clean up
-        lora.cleanup()
-
-
-if __name__ == '__main__':
-   main()
+        if did_init:
+            lora.set_mode_idle()
+            lora.cleanup()
