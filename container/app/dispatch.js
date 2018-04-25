@@ -11,6 +11,8 @@ var utils = require("./lib/utils");
 
 module.exports = (function Dispatch() {
 
+    console.log("starting to dispatch...");
+    
     var sync;
     var db = new PouchDB(utils.getLocalDatabaseURI());
 
@@ -23,26 +25,21 @@ module.exports = (function Dispatch() {
 
         var remote_db = new PouchDB(utils.getRemoteDatabaseURI());
 
-        sync = db.sync(remote_db, {
-          live: true,
-          retry: true
-        }).on('change', function (change) {
-            if (change.direction) {
-                console.log("[stor] " + change.direction  + " docs: " + 
-                        change.change.docs_read + " read / " + 
-                        change.change.docs_written + " written"
-                    );
-            }
-            else {
-                console.log("[stor] change: ", change);
-            }
-        }).on('paused', function (info) {
-            console.log("paused sync... no internet?");
-        }).on('active', function (info) {
-            console.log("resumed sync... internet is back?");
-        }).on('error', function (err) {
-            console.log("err: ", err);
-        });
+        sync = db.sync(remote_db, { live: true, retry: true})
+            .on('change', function (change) {
+                if (change.direction) {
+                    console.log("[stor] " + change.direction  + " docs: " + 
+                            change.change.docs_read + " read / " + 
+                            change.change.docs_written + " written"
+                        );
+                }
+                else {
+                    console.log("[stor] change: ", change);
+                }
+            })
+            .on('error', function (err) {
+                console.log("err: ", err);
+            });
     }
 
     function stopCloudSync() {
@@ -59,17 +56,13 @@ module.exports = (function Dispatch() {
 
     // setup change feed
     function processChange(id,key,val) {
-        var msg = id + "::";
-        msg += key + "=" +JSON.stringify(val);
         console.log(" ");
         console.log(msg);
         console.log(" ");
-        if (utils.isLantern()) {
-            utils.loraBroadcast(msg);
-        }
     }
 
     function watchLocalDatabase() {
+
         db.changes({
                 live: true,
                 since: 'now',
@@ -82,18 +75,35 @@ module.exports = (function Dispatch() {
                 console.log("paused change feed");
             })
             .on('change', function (change) {
+
+                var msg = "";
                 for (var idx in change.changes) {
                     var doc = change.doc;
                     var rev = change.changes[idx].rev;
                     console.log(["======", doc._id, rev, "======"].join(" "));
-                    for (var idy in doc) {
-
-                        if (idy[0] != "_" && idy != "32" && idy != "33") {
-                            processChange(doc._id,idy,doc[idy]);
+                    var params = [];
+                    for (var k in doc) {
+                        if (k[0] != "_" && k != "32" && k != "33") {
+                            var val = doc[k];
+                            if (val instanceof Array) {
+                                val = val.join(",");
+                            }
+                            else if (typeof(val) == "object") {
+                                val = JSON.stringify(val);
+                            }
+                            params.push(k+"="+val);
                         }
                     }
+
+                    if (params.length) {
+                        msg += doc._id + "//" + params.join("&");
+                    }
                 }
-                // received a change
+
+                // push change over distributed long-range network
+                if (utils.isLantern()) {
+                    utils.loraBroadcast(msg);
+                }
             })
             .on('error', function (err) {
                 // handle errors
@@ -107,5 +117,20 @@ module.exports = (function Dispatch() {
         }
     });
 
+    if (utils.isLantern()) {
+        // let others know we are online
+        utils.loraBroadcast("1");
+    }
+
     watchLocalDatabase();
+
+    process.stdin.resume();
+
+    process.on('SIGINT', function () {
+        if (utils.isLantern()) {
+            // let others know we are online
+            utils.loraBroadcast("0");
+        }
+        process.exit();
+    });
 }());
