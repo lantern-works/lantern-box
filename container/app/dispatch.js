@@ -13,46 +13,7 @@ module.exports = (function Dispatch() {
 
     console.log("starting to dispatch...");
     
-    var sync;
     var db = new PouchDB(utils.getLocalDatabaseURI());
-
-    function startCloudSync() {
-
-        if (process.env.CLOUD) {
-            console.log("skip sync since this is in the cloud...");
-            return;
-        }
-
-        var remote_db = new PouchDB(utils.getRemoteDatabaseURI());
-
-        sync = db.sync(remote_db, { live: true, retry: true})
-            .on('change', function (change) {
-                if (change.direction) {
-                    console.log("[stor] " + change.direction  + " docs: " + 
-                            change.change.docs_read + " read / " + 
-                            change.change.docs_written + " written"
-                        );
-                }
-                else {
-                    console.log("[stor] change: ", change);
-                }
-            })
-            .on('error', function (err) {
-                console.log("err: ", err);
-            });
-    }
-
-    function stopCloudSync() {
-        if (sync) {
-            sync.on('complete', function() {
-                console.log("cloud sync stopped");
-            });
-            sync.cancel();
-        }
-        else {
-            console.log("can't stop non-existing sync");
-        }
-    }
 
     // setup change feed
     function processChange(id,key,val) {
@@ -110,12 +71,6 @@ module.exports = (function Dispatch() {
                 console.log(err);
             });
     }
-
-    utils.checkInternet(function(is_connected) {
-        if (is_connected) {
-            startCloudSync();
-        }
-    });
 
     if (utils.isLantern()) {
         // let others know we are online
