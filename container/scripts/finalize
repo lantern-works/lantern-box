@@ -4,19 +4,37 @@ echo "#############################################"
 echo "## Finalize Setup "
 echo "#############################################"
 
-touch /etc/systemd/system/lantern.service
-cat <<EOF >"/etc/systemd/system/lantern.service"
+# http service
+touch /etc/systemd/system/lantern-http.service
+cat <<EOF >"/etc/systemd/system/lantern-http.service"
 [Unit]
-Description=Lantern Service
+Description=Lantern Database & Web Service
 
 [Service]
-ExecStart=/opt/lantern/bin/lantern-service
+ExecStart=/opt/lantern/service/lantern-http
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable lantern.service
+systemctl enable lantern-http.service
+
+
+# lora service
+touch /etc/systemd/system/lantern-lora.service
+cat <<EOF >"/etc/systemd/system/lantern-lora.service"
+[Unit]
+Description=Lantern LoRa Service
+
+[Service]
+ExecStart=/opt/lantern/service/lantern-lora
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable lantern-lora.service
+
 
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin

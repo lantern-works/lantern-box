@@ -1,6 +1,6 @@
 {
     "name": "lantern",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "dependencies": {
         "express": "*",
         "pouchdb-core": "*",
@@ -12,7 +12,6 @@
         "js-yaml": "*"
     },
     "scripts": {
-        "start": "node server.js",
-        "dispatch": "node dispatch.js"
+        "start": "node server.js"
     }
 }

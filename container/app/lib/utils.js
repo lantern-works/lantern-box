@@ -43,10 +43,10 @@ module.exports = function Utils() {
         });
     };
 
-    self.loraBroadcast = function(msg) {
+    self.queueMessageForRadio = function(msg) {
         config = config || yaml.safeLoad(fs.readFileSync(config_file, 'utf8'));
         msg = config.LANTERN_ID + "::" + msg;
-        var program = spawn(path.resolve(__dirname + "/../bin/lora-broadcast"), [msg]);
+        var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
 
         program.stdout.on('data', function (data) {
           console.log('stdout: ' + data.toString());

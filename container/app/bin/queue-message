@@ -1,0 +1,11 @@
+#!/usr/bin/env python2
+import sys
+from persistqueue import FIFOSQLiteQueue
+q = FIFOSQLiteQueue(path="/tmp/messages-sqlite")
+
+if (len(sys.argv) > 1):
+    sys.argv.pop(0)
+    for item in sys.argv:
+        q.put(str(item))
+else:
+    print("no message to queue...")

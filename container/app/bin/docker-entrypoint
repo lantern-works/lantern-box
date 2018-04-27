@@ -1,11 +1,14 @@
 #!/bin/bash
 
-export PATH="${PATH}:/opt/lantern/bin"
+export PATH="${PATH}:/opt/lantern/bin:/opt/lantern/service"
 
 system-config
 
-echo "starting service..."
-lantern-service &
+# systemd does not run correctly inside docker, so start manually:
+lantern-http &
+lantern-lora &
 
 echo "entering shell..."
 zsh
+
+trap : TERM INT; sleep infinity & wait
