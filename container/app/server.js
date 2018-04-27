@@ -1,4 +1,5 @@
 var express = require("express");
+var fs = require("fs");
 var path = require("path");
 var execSync = require("child_process").execSync;
 var cors = require("./middleware/cors");
@@ -10,7 +11,7 @@ var PouchDB = require("./lib/pouchdb");
 var serv, port, db, sync, static_path;
 
 
-//-------------------------------------------------------------------- Helpers
+//----------------------------------------------------------------------------
 
 function startServer() {
     // finally, start up server
@@ -73,19 +74,34 @@ function stopCloudSync() {
     }
 }
 
+function dbRoute() {
+    var data_dir = __dirname + "/data/";
+    if (!fs.existsSync(data_dir)) {
+        fs.mkdirSync(data_dir);
+    }
+    
+    return require("express-pouchdb")(PouchDB.defaults({
+        prefix: data_dir,
+        adapter: "websql"
+    }));
+}
 
 
-//----------------------------------------------------------------- Initialize
+
+//----------------------------------------------------------------------------
+
 console.log("[server] starting server...");
 
+// setup app and database server...
 serv = express();
 port = (process.env.TERM_PROGRAM ? 8000 : 80);
 static_path = path.resolve(__dirname + "/public/");
 serv.disable("x-powered-by");
 serv.use(rewrite);
-serv.use("/db/", cors, require("./routes/db"));
+serv.use("/db/", cors, dbRoute());
 serv.use("/", express.static(static_path));
 
+// download latest version of web app platform...
 utils.checkInternet(function(is_connected) {
     if (is_connected) {
         updateWebPlatform();
@@ -93,10 +109,12 @@ utils.checkInternet(function(is_connected) {
     else {
         console.log("[server] internet access: unavailable");
     }
+
+    // start the web and database server...
     try {
-        // connect to and setup database...
         startServer();
     } catch (e) {
         console.log(e);
+        process.exit();
     }
 });
