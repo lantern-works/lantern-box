@@ -4,16 +4,19 @@ import sys
 import string
 import time
 import rf95
+import signal
 from threading import Timer
 from persistqueue import FIFOSQLiteQueue
 
 send_freq_secs = 15 # how many seconds should we wait between messages
 lora = rf95.RF95(0, 25, None, 13)
-freq = 915.00
+freq = 905.01
 did_init = False
-q = FIFOSQLiteQueue(path="/tmp/messages-sqlite")
+is_running_queue = False
 
-#------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------
 
 class RepeatedTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
@@ -23,7 +26,6 @@ class RepeatedTimer(object):
         self.args       = args
         self.kwargs     = kwargs
         self.is_running = False
-        self.start()
 
     def _run(self):
         self.is_running = False
@@ -42,68 +44,109 @@ class RepeatedTimer(object):
         
 
 
+
+#-----------------------------------------------------------------------------
+
 def isLoRaBusy():
     lora.spi.open(0,lora.cs)
     current_mode = lora.spi_read(rf95.REG_01_OP_MODE)
     if (current_mode == 128 or current_mode == 129):
         return True
 
-def subscribeAll():
-    # only receive data if we are not trying to send...
-    while len(q) == 0:
-        print("waiting for lora messages...")
-        # Wait until data is available 
-        while not lora.available():
-            pass
-        # Receive
-        data = lora.recv()
-        print("-----------------")
-        print("receiving:")
-        for i in data:
-            print(chr(i), end="")
-        print("bytes received: " + str(lora.buflen))
-        print("-----------------")
+def checkForIncoming():
+    # Wait until data is available 
+    while not lora.available():
+        pass
+    # Receive
+    payload_size = lora.buflen
+    data = lora.recv()
+    print("-----------------")
+    print("receiving:")
+    for i in data:
+        print(chr(i), end="")
+    print("\nbytes received: " + str(payload_size))
+    print("-----------------")
+    sys.stdout.flush()
 
-def publishAll():
-    q = FIFOSQLiteQueue(path="/tmp/messages-sqlite")
-    print("publishing " + str(len(q)) + " messages from queue...")
-    while len(q) > 0:
-        item = q.get()
-        print("-----------------")
-        print("sending: "   + item)
-        lora.send(lora.str_to_data(item))
-        lora.wait_packet_sent()
-        transmit_len = len(item.encode("utf8"))
-        print("bytes sent: " + str(transmit_len))
-        print("-----------------")
-        time.sleep(2)
-        q.task_done()
+def checkForOutgoing():
+    global is_running_queue
+    # skip timer runs if we're still processing a queue
+    if not is_running_queue:
+        is_running_queue = True
+        q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
+        while len(q) > 0:
+            item = q.get()
+            print("-----------------")
+            print("sending: "   + item)
+            sys.stdout.flush()
+            lora.send(lora.str_to_data(item))
+            lora.wait_packet_sent()
+            payload_size = len(item.encode("utf8"))
+            print("bytes sent: " + str(payload_size))
+            print("-----------------")
+            sys.stdout.flush()
+            time.sleep(4)
+            q.task_done()
+        
+        is_running_queue = False
 
-#------------------------------------------------------------------
 
-if __name__ == '__main__':
+def exitGracefully():
+    print("exiting gracefully...")
+    sys.stdout.flush() 
+    lora.set_mode_idle()
+    time.sleep(1)
+    lora.cleanup()
+    time.sleep(1)
+    sys.exit()
+
+#-----------------------------------------------------------------------------
+def main():
+
+    print ("============================")
+    print("  Lantern LoRa Service")
+    print ("============================")
+    sys.stdout.flush() 
+
+
+    def handleStopSignals(signum, frame):
+        if rt:
+            rt.stop()
+        exitGracefully()
+
+    
     try:
         if ( isLoRaBusy() ):
             print("radio in use elsewhere...")
+            sys.stdout.flush() 
             quit(1)
         elif not lora.init(): # returns True if found
-            print("radio not found or not ready")
-            lora.cleanup()
-            quit(1)
+            print("radio not found or not ready. please adjust to CE0 or try later...")
+            exitGracefully()
         else:
             print("radio ready @ " + str(freq) + "mhz")
+            sys.stdout.flush()
+
+            signal.signal(signal.SIGINT, handleStopSignals)
+            signal.signal(signal.SIGTERM, handleStopSignals)
+
+
             did_init = True
+            lora.set_frequency(freq)
+            lora.set_tx_power(10)
 
-        lora.set_frequency(freq)
-        lora.set_tx_power(15)
+            print("waiting for outgoing messages in queue...")
+            sys.stdout.flush()
+            rt = RepeatedTimer(5, checkForOutgoing)
+            rt.start()
 
-        rt = RepeatedTimer(send_freq_secs, publishAll)
-        subscribeAll()
+            print("watching airwaves for incoming messages...")
+            sys.stdout.flush()
+            while True:
+                checkForIncoming()
 
+    except KeyboardInterrupt:
+        exitGracefully()
 
-    finally:
-        # clean up
-        if did_init:
-            rt.stop()
-            lora.set_mode_idle()
-            lora.cleanup()
+if __name__ == '__main__':
+    main()

@@ -1,11 +1,12 @@
 #!/usr/bin/env python2
 import sys
 from persistqueue import FIFOSQLiteQueue
-q = FIFOSQLiteQueue(path="/tmp/messages-sqlite")
+q = FIFOSQLiteQueue(path="/tmp/messages-sqlite", multithreading=True)
 
 if (len(sys.argv) > 1):
     sys.argv.pop(0)
     for item in sys.argv:
+        print("adding: " + str(item))
         q.put(str(item))
 else:
     print("no message to queue...")

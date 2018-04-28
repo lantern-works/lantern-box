@@ -26,6 +26,20 @@ make image
 [Download Etcher](http://etcher.io) and use this to flash your image onto a MicroSD card 8GB or greater. Your image will be named "flash-to-pi.img" by default and will be located in a "build" folder.
 
 
+After starting up your Lantern, you can SSH as the "admin" user with the password as defined in your \_env file. Next, you can view status of the services by watching these logs:
+
+```bash
+journalctl -f -u lantern-lora.service
+```
+
+```bash
+journalctl -f -u lantern-http.service
+```
+
+```bash
+tail -f /opt/lantern/log.txt
+```
+
 
 ### Requirements
 
