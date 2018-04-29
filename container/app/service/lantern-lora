@@ -88,13 +88,16 @@ def checkForOutgoing():
             
         while to_process > 0:
             item = q.get()
-            print("-----------------")
-            printNow("sending: "   + item)
-            lora.send(lora.str_to_data(item))
-            lora.wait_packet_sent()
-            payload_size = len(item.encode("utf8"))
-            print("bytes sent: " + str(payload_size))
-            printNow("-----------------")
+            if len(item):
+                print("-----------------")
+                printNow("sending: "   + item)
+                lora.send(lora.str_to_data(item))
+                lora.wait_packet_sent()
+                payload_size = len(item.encode("utf8"))
+                print("bytes sent: " + str(payload_size))
+                printNow("-----------------")
+            else:
+                printNow("skipping empty message")
             to_process -= 1
             if to_process > 0:
                 printNow("remaining in queue: " + str(len(q)))

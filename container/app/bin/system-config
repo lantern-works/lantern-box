@@ -16,8 +16,9 @@ echo "encrypting wifi pass..."
 WIFI_PASS=`wpa_passphrase ${WIFI_SSID} <<< ${WIFI_PASS} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
 
 
+# @todo make unique even when using same pi image for multiple lanterns
 echo "generating unique identifier for lantern..."
-LANTERN_ID="$(openssl rand -hex 3)"
+LANTERN_ID="$(openssl rand -hex 1)"
 
 echo "saving config to disk..."
 touch /opt/lantern/config.yml

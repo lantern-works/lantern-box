@@ -1,47 +1,137 @@
 var PouchDB = require("./pouchdb");
 var utils = require("./utils");
+var path = require("path");
+var spawn = require('child_process').spawn;
 
 module.exports = function RadioPush(db) {
 
     var self = {};
 
-    function onChange(change) {
-        var msg = "";
-        for (var idx in change.changes) {
-            var doc = change.doc;
-            var rev = change.changes[idx].rev;
-            console.log(["======", doc._id, rev, "======"].join(" "));
-            var params = [];
-            for (var k in doc) {
-                if (k[0] != "_" && k != "32" && k != "33") {
-                    var val = doc[k];
-                    if (val instanceof Array) {
-                        val = val.join(",");
-                    }
-                    else if (typeof(val) == "object") {
-                        val = JSON.stringify(val);
-                    }
-                    params.push(k+"="+val);
-                }
-            }
+    //------------------------------------------------------------------------
+    /**
+    * push change over distributed long-range network
+    **/
+    function addMessageToQueue(msg) {
+        if (!msg) return;
 
-            if (params.length) {
-                msg += doc._id + "//" + params.join("&");
-            }
-        }
-        console.log("[radio] push message: " + msg);
-        // push change over distributed long-range network
         if (utils.isLantern()) {
-            utils.queueMessageForRadio(msg);
+            console.log("[radio] push message: " + msg);
+            var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
+
+            program.stdout.on('data', function (data) {
+              console.log('q result: ' + data.toString());
+            });
+
+            program.stderr.on('data', function (data) {
+              console.log('q err: ' + data.toString());
+            });
+        }
+        else {
+            console.log("[radio] simulate push message: " + msg);
         }
     }
 
+    /**
+    * let other lanterns know about a key/value change
+    **/
+    function notifyDocumentUpdate(doc) {
+        var msg = buildParameters(doc);
+        if (msg.length) {
+            addMessageToQueue("^::"+doc._id + "::" + msg);
+        }
+    }
+    
+
+    /**
+    * let other lanterns know about a new document
+    **/
+    function notifyDocumentCreate(doc) {
+        var msg = buildParameters(doc);
+        if (msg.length) {
+            addMessageToQueue("+::"+doc._id + "::" + msg);
+        }
+    }
+
+
+    /**
+    * let other lanterns know about a removed document
+    **/
+    function notifyDocumentRemove(doc_id) {
+        addMessageToQueue("-::"+doc_id);
+    }
+
+    /**
+    * let other lanterns know this device is online
+    **/
+    function notifyLanternOnline() {
+        var id = utils.getLanternID();
+        if (!id) {
+            console.log("[radio] missing lantern id");
+        }
+        else {
+            addMessageToQueue("!::"+ id);
+        }
+    }
+
+    /**
+    * construct a query-string style list of key/value pairs
+    */
+    function buildParameters(doc) {
+        var params = [];
+        for (var k in doc) {
+            // ignore private keys that begin with underscore such as _rev
+            // find change to keys that are not created_at or updated_at
+            if (k[0] != "_" && k != "32" && k != "33") {
+                var val = doc[k];
+                if (val instanceof Array) {
+                    val = val.join(",");
+                }
+                else if (typeof(val) == "object") {
+                    val = JSON.stringify(val);
+                }
+                params.push(k+"="+val);
+            }
+        }
+        return params.join("&");
+    }
+
+
+    /**
+    * handler to process any document change in local lantern database
+    **/
+    function onChange(change) {
+        var msg = "";
+        for (var idx in change.changes) {
+            console.log(change);
+            var doc = change.doc;
+            var rev = change.changes[idx].rev;
+            console.log(["======", doc._id, rev, "======"].join(" "));
+            // push change over distributed long-range network
+            if (doc._deleted) {
+                notifyDocumentRemove(doc._id);
+            }
+            else if(doc._rev[0] == "1") {
+                // assume document has been created if we're at first revision
+                notifyDocumentCreate(doc);
+            }
+            else {
+                notifyDocumentUpdate(doc);
+            }
+        }
+    }
+    
+    
+
+    //------------------------------------------------------------------------
+    /**
+    * start listening for changes
+    **/
     self.start = function() {
         if (process.env.CLOUD) {
             console.log("skip push since this is in the cloud...");
             return;
         }
-        console.log("[radio] watching for changes...");
+        console.log("[radio] watching for changes to database...");
         db.changes({
                 live: true,
                 since: 'now',
@@ -57,10 +147,20 @@ module.exports = function RadioPush(db) {
             .on('error', function (err) {
                 console.log(err);
             });
-    };
 
+        notifyLanternOnline();
+    };
+    
+
+    /**
+    * @todo stop listening for changes
+    **/
     self.stop = function() {
+        console.log("[radio] @todo implement stop");
     };
+    
 
+
+    //------------------------------------------------------------------------
     return self;
 };

@@ -27,7 +27,6 @@ function startServer() {
             .then(function(response) {
                 console.log("[server] database starting doc count: " + response.doc_count);
                 console.log("[server] database update sequence: " + response.update_seq);
-                console.log("[server] attempting lora radio push");
                 push.start();
                 // console.log("[server] attempting cloud sync");
                 // sync.start();
@@ -62,8 +61,6 @@ function dbRoute() {
 
 //----------------------------------------------------------------------------
 
-console.log("[server] starting server...");
-
 // setup app and database server...
 serv = express();
 port = (process.env.TERM_PROGRAM ? 8000 : 80);
@@ -72,6 +69,11 @@ serv.disable("x-powered-by");
 serv.use(rewrite);
 serv.use("/db/", cors, dbRoute());
 serv.use("/", express.static(static_path));
+
+
+console.log("============================");
+console.log("  Lantern HTTP Service");
+console.log("============================");
 
 // download latest version of web app platform...
 utils.checkInternet(function(is_connected) {

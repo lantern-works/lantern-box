@@ -2,7 +2,6 @@ var path = require("path");
 var fs = require("fs");
 var dns = require("dns");
 var yaml = require('js-yaml');
-var spawn = require('child_process').spawn;
 
 module.exports = function Utils() {
 
@@ -43,19 +42,11 @@ module.exports = function Utils() {
         });
     };
 
-    self.queueMessageForRadio = function(msg) {
-        config = config || yaml.safeLoad(fs.readFileSync(config_file, 'utf8'));
-        msg = config.LANTERN_ID + "::" + msg;
-        var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
-
-        program.stdout.on('data', function (data) {
-          console.log('stdout: ' + data.toString());
-        });
-
-        program.stderr.on('data', function (data) {
-          console.log('stderr: ' + data.toString());
-        });
+    self.getLanternID = function() {
+        if (config.hasOwnProperty("LANTERN_ID")) {
+            return config.LANTERN_ID;
+        }
     };
-    
+
     return self; 
 }();
