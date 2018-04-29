@@ -50,7 +50,15 @@ fi
 
 cd /opt/lantern/
 sudo chmod -R o-rwx /opt/lantern
+
+# required to make sure node modules can install on our Raspberry Pi
 npm config set unsafe-perm true
+# work-around to make sure sqlite3 is available for PouchDB adapter
+if [ ! -d "/opt/lantern/node_modules/sqlite3" ]; then
+    npm install sqlite3@4 --build-from-source
+    npm install https://github.com/lantern-works/node-websql/tarball/master
+fi
+# install app requirements
 npm install
 npm config set unsafe-perm false
-
+# stop using unsafe permissions for npm once we're done installing
