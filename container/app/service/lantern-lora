@@ -8,16 +8,12 @@ import signal
 from threading import Timer
 from persistqueue import FIFOSQLiteQueue
 
-send_freq_secs = 15 # how many seconds should we wait between messages
-lora = rf95.RF95(0, 25, None, 13)
-freq = 905.01
-did_init = False
-is_running_queue = False
-
-
+LORA_FREQUENCY = rf95.CH_07_US # 918.2 MHz
+LORA_POWER = 10
+SEND_INTERVAL = 3 # how many seconds should we wait between messages
+LORA_MODEM_CONFIG = (0x78, 0xc4, 0x0C)  # slow and long-range with AGC
 
 #-----------------------------------------------------------------------------
-
 class RepeatedTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
         self._timer     = None
@@ -44,8 +40,17 @@ class RepeatedTimer(object):
         
 
 
+#-----------------------------------------------------------------------------
+lora = rf95.RF95(0, 25, None, 13)
+did_init = False
+is_running_queue = False
+
+
 
 #-----------------------------------------------------------------------------
+def printNow(str):
+    print(str)
+    sys.stdout.flush()
 
 def isLoRaBusy():
     lora.spi.open(0,lora.cs)
@@ -53,9 +58,10 @@ def isLoRaBusy():
     if (current_mode == 128 or current_mode == 129):
         return True
 
+# for now, some updates will be missed when we're sending out data
 def checkForIncoming():
     # Wait until data is available 
-    while not lora.available():
+    while is_running_queue or not lora.available():
         pass
     # Receive
     payload_size = lora.buflen
@@ -65,83 +71,88 @@ def checkForIncoming():
     for i in data:
         print(chr(i), end="")
     print("\nbytes received: " + str(payload_size))
-    print("-----------------")
-    sys.stdout.flush()
+    printNow("-----------------")
 
 def checkForOutgoing():
     global is_running_queue
     # skip timer runs if we're still processing a queue
     if not is_running_queue:
+
         is_running_queue = True
+
         q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
-        while len(q) > 0:
+        to_process = len(q)
+
+        if to_process > 0:
+            printNow("queue to process:" + str(to_process))
+            
+        while to_process > 0:
             item = q.get()
             print("-----------------")
-            print("sending: "   + item)
-            sys.stdout.flush()
+            printNow("sending: "   + item)
             lora.send(lora.str_to_data(item))
             lora.wait_packet_sent()
             payload_size = len(item.encode("utf8"))
             print("bytes sent: " + str(payload_size))
-            print("-----------------")
-            sys.stdout.flush()
-            time.sleep(4)
+            printNow("-----------------")
+            to_process -= 1
+            if to_process > 0:
+                printNow("remaining in queue: " + str(len(q)))
+            time.sleep(SEND_INTERVAL)
             q.task_done()
-        
+
+
         is_running_queue = False
 
 
 def exitGracefully():
-    print("exiting gracefully...")
-    sys.stdout.flush() 
+    printNow("exiting gracefully...")
     lora.set_mode_idle()
     time.sleep(1)
     lora.cleanup()
     time.sleep(1)
     sys.exit()
 
+
+
 #-----------------------------------------------------------------------------
 def main():
 
-    print ("============================")
+    print("============================")
     print("  Lantern LoRa Service")
-    print ("============================")
-    sys.stdout.flush() 
-
-
+    printNow("============================")
+    
     def handleStopSignals(signum, frame):
         if rt:
             rt.stop()
         exitGracefully()
-
     
     try:
         if ( isLoRaBusy() ):
-            print("radio in use elsewhere...")
-            sys.stdout.flush() 
+            printNow("radio in use elsewhere...")
             quit(1)
         elif not lora.init(): # returns True if found
             print("radio not found or not ready. please adjust to CE0 or try later...")
             exitGracefully()
         else:
-            print("radio ready @ " + str(freq) + "mhz")
-            sys.stdout.flush()
-
+            # make sure we always exit gracefully when running as a service
             signal.signal(signal.SIGINT, handleStopSignals)
             signal.signal(signal.SIGTERM, handleStopSignals)
-
-
             did_init = True
-            lora.set_frequency(freq)
-            lora.set_tx_power(10)
 
-            print("waiting for outgoing messages in queue...")
-            sys.stdout.flush()
-            rt = RepeatedTimer(5, checkForOutgoing)
+            # setup RF95/RF96 modem for our long-range, peer-to-peer data
+            lora.set_frequency(LORA_FREQUENCY)
+            lora.set_tx_power(LORA_POWER)
+            lora.set_modem_config(LORA_MODEM_CONFIG)
+            printNow("radio ready @ " + str(LORA_FREQUENCY) + " MHz")
+            printNow("waiting for outgoing messages in queue...")
+
+            # use a timed interval to check our queue and send messages
+            rt = RepeatedTimer(7, checkForOutgoing)
             rt.start()
 
-            print("watching airwaves for incoming messages...")
-            sys.stdout.flush()
+            # when we're not sending messags, drop into receiving mode
+            printNow("watching airwaves for incoming messages...")
             while True:
                 checkForIncoming()
 
