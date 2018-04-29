@@ -3,10 +3,15 @@ from __future__ import print_function
 import sys
 import string
 import time
-import rf95
 import signal
 from threading import Timer
 from persistqueue import FIFOSQLiteQueue
+
+try:
+    import rf95
+except Exception,e:
+    print("skipping lora for non-rpi interface...")
+    sys.exit()
 
 LORA_FREQUENCY = rf95.CH_07_US # 918.2 MHz
 LORA_POWER = 10
