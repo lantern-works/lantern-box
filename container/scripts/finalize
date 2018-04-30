@@ -5,35 +5,35 @@ echo "## Finalize Setup "
 echo "#############################################"
 
 # http service
-touch /etc/systemd/system/lantern-http.service
-cat <<EOF >"/etc/systemd/system/lantern-http.service"
+touch /etc/systemd/system/http.service
+cat <<EOF >"/etc/systemd/system/http.service"
 [Unit]
 Description=Lantern Database & Web Service
 
 [Service]
-ExecStart=/opt/lantern/service/lantern-http
+ExecStart=/opt/lantern/service/http
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable lantern-http.service
+systemctl enable http.service
 
 
 # lora service
-touch /etc/systemd/system/lantern-lora.service
-cat <<EOF >"/etc/systemd/system/lantern-lora.service"
+touch /etc/systemd/system/lora.service
+cat <<EOF >"/etc/systemd/system/lora.service"
 [Unit]
 Description=Lantern LoRa Service
 
 [Service]
-ExecStart=/opt/lantern/service/lantern-lora
+ExecStart=/opt/lantern/service/lora
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable lantern-lora.service
+systemctl enable lora.service
 
 
 # create admin user
@@ -43,4 +43,4 @@ echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
 # set zsh as the default shell
 chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
 chown admin. /home/admin/.zshrc
-echo 'cd /opt/lantern/' >> /home/admin/.zshrc
+echo 'cd /opt/lantern/' > /home/admin/.zshrc

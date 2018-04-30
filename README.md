@@ -16,7 +16,7 @@ The resulting server will be available at: http://localhost:8080
 
 ### Setup Your Raspberry Pi Zero W
 
-This command uses [pi-maker](https://github.com/lantern-works/pi-maker) to create the image:
+This command uses [pi-maker](https://github.com/lantern-works/pi-maker) to create the image. For best results, please try running the and verifying your local server first (instructions above) before running this command:
 
 ```bash
 make image
@@ -29,11 +29,11 @@ make image
 After starting up your Lantern, you can SSH as the "admin" user with the password as defined in your \_env file. Next, you can view status of the services by watching these logs:
 
 ```bash
-journalctl -f -u lantern-lora.service
+journalctl -f -u lora.service
 ```
 
 ```bash
-journalctl -f -u lantern-http.service
+journalctl -f -u http.service
 ```
 
 ```bash
@@ -52,8 +52,8 @@ apt-get install binfmt-support qemu-user-static make
 
 ### Reference
 - [WiFi Captive Portal](https://andrewwippler.com/2016/03/11/wifi-captive-portal/)
-
 - [LoRa Time Slots](http://www.daveakerman.com/?p=1850)
 - [LoRa Formats](https://www.open-electronics.org/using-lora-shield-in-packet-mode/)
+
 ### Disclaimer
 This repository is under active development and not yet intended for widespread use.

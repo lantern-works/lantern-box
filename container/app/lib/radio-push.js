@@ -6,6 +6,7 @@ var spawn = require('child_process').spawn;
 module.exports = function RadioPush(db) {
 
     var self = {};
+    var ping = 60 * 1000; // every 1m tell other lanterns we exist
 
     //------------------------------------------------------------------------
     /**
@@ -107,6 +108,8 @@ module.exports = function RadioPush(db) {
             var rev = change.changes[idx].rev;
             console.log(["======", doc._id, rev, "======"].join(" "));
             // push change over distributed long-range network
+            // @todo filter out changes that were made as a direct result
+            // of a messasge from LoRa (this prevents an echo effect)
             if (doc._deleted) {
                 notifyDocumentRemove(doc._id);
             }
@@ -148,7 +151,7 @@ module.exports = function RadioPush(db) {
                 console.log(err);
             });
 
-        notifyLanternOnline();
+        setInterval(notifyLanternOnline, ping);
     };
     
 
