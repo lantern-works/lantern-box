@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 import sys
 from persistqueue import FIFOSQLiteQueue
-q = FIFOSQLiteQueue(path="/tmp/messages-sqlite", multithreading=True)
+q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
 
 if (len(sys.argv) > 1):
     sys.argv.pop(0)

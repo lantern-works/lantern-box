@@ -107,6 +107,8 @@ module.exports = function RadioPush(db) {
             var rev = change.changes[idx].rev;
             console.log(["======", doc._id, rev, "======"].join(" "));
             // push change over distributed long-range network
+            // @todo filter out changes that were made as a direct result
+            // of a messasge from LoRa (this prevents an echo effect)
             if (doc._deleted) {
                 notifyDocumentRemove(doc._id);
             }
@@ -148,7 +150,7 @@ module.exports = function RadioPush(db) {
                 console.log(err);
             });
 
-        notifyLanternOnline();
+        setInterval(notifyLanternOnline, 60*100);
     };
     
 

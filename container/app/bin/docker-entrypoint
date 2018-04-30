@@ -5,8 +5,8 @@ export PATH="${PATH}:/opt/lantern/bin:/opt/lantern/service"
 system-config
 
 # systemd does not run correctly inside docker, so start manually:
-lantern-http &
-lantern-lora &
+http &
+lora &
 
 echo "entering shell..."
 zsh
