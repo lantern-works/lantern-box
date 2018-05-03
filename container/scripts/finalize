@@ -20,9 +20,10 @@ EOF
 systemctl enable http.service
 
 
-# lora service
-touch /etc/systemd/system/lora.service
-cat <<EOF >"/etc/systemd/system/lora.service"
+if [[ -f /boot/config.txt ]]; then
+    # lora service
+    touch /etc/systemd/system/lora.service
+    cat <<EOF >"/etc/systemd/system/lora.service"
 [Unit]
 Description=Lantern LoRa Service
 
@@ -33,8 +34,8 @@ Restart=always
 [Install]
 WantedBy=multi-user.target
 EOF
-systemctl enable lora.service
-
+    systemctl enable lora.service
+fi
 
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin

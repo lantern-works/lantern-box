@@ -6,7 +6,11 @@ system-config
 
 # systemd does not run correctly inside docker, so start manually:
 http &
-lora &
+
+
+if [[ -f /boot/config.txt ]]; then
+    lora &
+fi
 
 echo "entering shell..."
 zsh

@@ -20,6 +20,10 @@ function parse_yaml {
 
 parse_yaml /opt/lantern/config.yml
 
+if [ "$WIFI_SSID" == "" ]; then
+  echo "skipping wifi since no SSID provided in _env"
+  exit
+fi
 
 touch /etc/netctl/wlan0-SSID
 cat <<EOF >"/etc/netctl/wlan0-SSID"
