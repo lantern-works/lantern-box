@@ -6,6 +6,7 @@ var spawn = require('child_process').spawn;
 module.exports = function RadioPush(db) {
 
     var self = {};
+    var ping = 60 * 1000; // every 1m tell other lanterns we exist
 
     //------------------------------------------------------------------------
     /**
@@ -150,7 +151,7 @@ module.exports = function RadioPush(db) {
                 console.log(err);
             });
 
-        setInterval(notifyLanternOnline, 60*100);
+        setInterval(notifyLanternOnline, ping);
     };
     
 
