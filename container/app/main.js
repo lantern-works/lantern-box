@@ -63,7 +63,7 @@ function dbRoute() {
 
 // setup app and database server...
 serv = express();
-port = (process.env.TERM_PROGRAM ? 8000 : 80);
+port = (process.env.TERM_PROGRAM ? 8080 : 80);
 static_path = path.resolve(__dirname + "/public/");
 serv.disable("x-powered-by");
 serv.use(rewrite);

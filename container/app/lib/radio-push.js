@@ -38,7 +38,7 @@ module.exports = function RadioPush(db) {
     function notifyDocumentUpdate(doc) {
         var msg = buildParameters(doc);
         if (msg.length) {
-            addMessageToQueue("^::"+doc._id + "::" + msg);
+            addMessageToQueue("^"+doc._id + "::" + msg);
         }
     }
     
@@ -49,7 +49,7 @@ module.exports = function RadioPush(db) {
     function notifyDocumentCreate(doc) {
         var msg = buildParameters(doc);
         if (msg.length) {
-            addMessageToQueue("+::"+doc._id + "::" + msg);
+            addMessageToQueue("+"+doc._id + "::" + msg);
         }
     }
 
@@ -58,7 +58,7 @@ module.exports = function RadioPush(db) {
     * let other lanterns know about a removed document
     **/
     function notifyDocumentRemove(doc_id) {
-        addMessageToQueue("-::"+doc_id);
+        addMessageToQueue("-"+doc_id);
     }
 
     /**
@@ -70,7 +70,7 @@ module.exports = function RadioPush(db) {
             console.log("[radio] missing lantern id");
         }
         else {
-            addMessageToQueue("!::"+ id);
+            addMessageToQueue("^d:"+ id + "::st=1");
         }
     }
 
@@ -106,18 +106,24 @@ module.exports = function RadioPush(db) {
             console.log(change);
             var doc = change.doc;
             var rev = change.changes[idx].rev;
+
             console.log(["======", doc._id, rev, "======"].join(" "));
+
+            // filters out changes made from LoRa to prevent echo
+            if (doc.rx) {
+                console.log("skipping document " + doc._id + "received by radio");
+                return;
+            }
+
             // push change over distributed long-range network
-            // @todo filter out changes that were made as a direct result
-            // of a messasge from LoRa (this prevents an echo effect)
             if (doc._deleted) {
                 notifyDocumentRemove(doc._id);
             }
-            else if(doc._rev[0] == "1") {
+            else if(!doc.rx && doc._rev[0] == "1") {
                 // assume document has been created if we're at first revision
                 notifyDocumentCreate(doc);
             }
-            else {
+            else if (!doc.rx) {
                 notifyDocumentUpdate(doc);
             }
         }

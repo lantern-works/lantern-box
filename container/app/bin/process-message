@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+var utils = require("../lib/utils");
+
+var PouchDB = require('pouchdb-core')
+    .plugin(require('pouchdb-adapter-http'))
+    .plugin(require('pouchdb-replication'));
+
+if (process.argv.length != 3) {
+    console.log("This program requires one and only one argument to run");
+    process.exit();
+}
+
+
+
+//----------------------------------------------------------------------------
+var msg = process.argv[2];
+var uri = utils.getLocalDatabaseURI();
+var db = new PouchDB(uri);
+
+
+function processCreate(doc) {
+    console.log("CREATE DOC ", doc);
+    return db.post(doc).then(function(results) {
+        console.log(results);
+    })
+    .catch(function(err) {
+        console.log(err);
+    });
+}
+
+function processUpdate(doc) {
+    console.log("UPDATE TO DOC ", doc);
+    db.get(doc._id).then(function(existing_doc) {
+        console.log("found document. merging...");
+        for (var idx in doc) {
+            existing_doc[idx] = doc[idx];
+        }
+
+        console.log("merged doc", existing_doc);
+
+        return db.post(existing_doc)
+            .then(function(results) {
+                console.log(results);
+            });
+
+    })
+    .catch(function(err) {
+        if (err.status == 404) {
+            processCreate(doc);
+        }
+        else {
+            console.log(err);
+        }
+    });
+}
+
+function processDelete(doc) {
+    console.log("DELETE DOC ", doc);
+
+    db.get(doc._id).then(function(existing_doc) {
+        console.log("found document. removing...");
+        doc._rev = existing_doc._rev;
+        return db.remove(doc).then(function(results) {
+            console.log(results);
+        });
+    })
+    .catch(function(err) {
+        if (err.status == 404) {
+            console.log("can't update non-existing document");
+        }
+        else {
+            console.log(err);
+        }
+    });
+}
+
+
+
+//----------------------------------------------------------------------------
+var mod = msg[0];
+
+var parts = msg.substr(1).split("::");
+
+// begin constructing doc based on message
+var doc = {
+    _id: parts[0],
+    rx: true // document received by long-range radio, don't push back out
+};
+
+var keys = parts[1];
+if (keys) {
+    keys.split("&").forEach(function(part) {
+        var item = keys.split("=");
+        doc[item[0]] = decodeURIComponent(item[1]);
+    });
+}
+
+if (mod == "+") {
+    doc.ca = new Date();
+    processCreate(doc);
+}
+else if (mod == "-") {
+    processDelete(doc);
+}
+else if (mod == "^") {
+    doc.ra = new Date();
+    processUpdate(doc);
+}

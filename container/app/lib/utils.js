@@ -26,7 +26,7 @@ module.exports = function Utils() {
     };
 
     self.getLocalDatabaseURI = function() {
-        var port = (process.env.TERM_PROGRAM ? 8000 : 80);
+        var port = (process.env.TERM_PROGRAM ? 8080 : 80);
         config = config || yaml.safeLoad(fs.readFileSync(config_file, 'utf8'));
         var db_uri = "http://admin:"+config.DB_PASS+"@localhost:" + port;
         return db_uri + "/db/lantern";

@@ -3,13 +3,15 @@
     "version": "0.0.4",
     "dependencies": {
         "express": "*",
-        "pouchdb-core": "*",
-        "pouchdb-adapter-node-websql": "*",
+        "express-pouchdb": "*",
+        "js-yaml": "*",
+        "npm": "^6.0.0",
         "pouchdb-adapter-http": "*",
+        "pouchdb-adapter-node-websql": "*",
+        "pouchdb-core": "*",
         "pouchdb-mapreduce": "*",
         "pouchdb-replication": "*",
-        "express-pouchdb": "*",
-        "js-yaml": "*"
+        "sqlite3": "^4.0.0"
     },
     "scripts": {
         "start": "node main.js"

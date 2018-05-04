@@ -4,6 +4,7 @@ import sys
 import string
 import time
 import signal
+import os
 from threading import Timer
 from persistqueue import FIFOSQLiteQueue
 
@@ -73,10 +74,15 @@ def checkForIncoming():
     data = lora.recv()
     print("-----------------")
     print("receiving:")
+    final_str = ""
     for i in data:
         print(chr(i), end="")
+        final_str += chr(i)
     print("\nbytes received: " + str(payload_size))
     printNow("-----------------")
+    cmd = "/opt/lantern/bin/process-message " + final_str
+    run = os.system(cmd)
+    print(run)
 
 def checkForOutgoing():
     global is_running_queue
