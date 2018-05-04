@@ -84,25 +84,29 @@ var parts = msg.substr(1).split("::");
 // begin constructing doc based on message
 var doc = {
     _id: parts[0],
-    rx: true // document received by long-range radio, don't push back out
+    $rx: true // document received by long-range radio, don't push back out
 };
 
 var keys = parts[1];
 if (keys) {
     keys.split("&").forEach(function(part) {
         var item = keys.split("=");
+        // double-check to make sure we don't process $key or _key
+        if (item[0][0] == "$" || item[0][0] == "_") {
+            return;
+        }
         doc[item[0]] = decodeURIComponent(item[1]);
     });
 }
 
 if (mod == "+") {
-    doc.ca = new Date();
+    doc.$ca = new Date();
     processCreate(doc);
 }
 else if (mod == "-") {
     processDelete(doc);
 }
 else if (mod == "^") {
-    doc.ra = new Date();
+    doc.$ra = new Date();
     processUpdate(doc);
 }

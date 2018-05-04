@@ -6,14 +6,25 @@ var spawn = require('child_process').spawn;
 module.exports = function RadioPush(db) {
 
     var self = {};
+    var update_log = {}; // use to prevent duplicate send of the same data
     var ping = 60 * 1000; // every 1m tell other lanterns we exist
 
     //------------------------------------------------------------------------
     /**
     * push change over distributed long-range network
     **/
-    function addMessageToQueue(msg) {
+    function addMessageToQueue(id, msg) {
         if (!msg) return;
+
+        if (update_log.hasOwnProperty(id)) {
+            if (update_log[id] == msg) {
+                console.log("[radio] skip duplicate message " + msg);
+                return;
+            }
+        }
+
+        // @todo manage memory footprint
+        update_log[id] = msg;
 
         if (utils.isLantern()) {
             console.log("[radio] push message: " + msg);
@@ -38,7 +49,7 @@ module.exports = function RadioPush(db) {
     function notifyDocumentUpdate(doc) {
         var msg = buildParameters(doc);
         if (msg.length) {
-            addMessageToQueue("^"+doc._id + "::" + msg);
+            addMessageToQueue(doc._id, "^"+doc._id + "::" + msg);
         }
     }
     
@@ -48,17 +59,15 @@ module.exports = function RadioPush(db) {
     **/
     function notifyDocumentCreate(doc) {
         var msg = buildParameters(doc);
-        if (msg.length) {
-            addMessageToQueue("+"+doc._id + "::" + msg);
-        }
+        addMessageToQueue(doc._id, "+"+doc._id + "::" + msg);
     }
 
 
     /**
     * let other lanterns know about a removed document
     **/
-    function notifyDocumentRemove(doc_id) {
-        addMessageToQueue("-"+doc_id);
+    function notifyDocumentRemove(id) {
+        addMessageToQueue(id, "-"+id);
     }
 
     /**
@@ -70,7 +79,7 @@ module.exports = function RadioPush(db) {
             console.log("[radio] missing lantern id");
         }
         else {
-            addMessageToQueue("^d:"+ id + "::st=1");
+            addMessageToQueue(id, "^d:"+ id + "::st=1");
         }
     }
 
@@ -80,9 +89,8 @@ module.exports = function RadioPush(db) {
     function buildParameters(doc) {
         var params = [];
         for (var k in doc) {
-            // ignore private keys that begin with underscore such as _rev
-            // find change to keys that are not created_at or updated_at
-            if (k[0] != "_" && k != "32" && k != "33") {
+            // ignore private keys and reserved _ namespace items when sending
+            if (k[0] != "_" && k[0] != "$") {
                 var val = doc[k];
                 if (val instanceof Array) {
                     val = val.join(",");
@@ -103,7 +111,6 @@ module.exports = function RadioPush(db) {
     function onChange(change) {
         var msg = "";
         for (var idx in change.changes) {
-            console.log(change);
             var doc = change.doc;
             var rev = change.changes[idx].rev;
 
@@ -119,13 +126,16 @@ module.exports = function RadioPush(db) {
             if (doc._deleted) {
                 notifyDocumentRemove(doc._id);
             }
-            else if(!doc.rx && doc._rev[0] == "1") {
+            else if(!doc.rx && doc._rev[0] == "1" && doc._rev[1] == "-") {
                 // assume document has been created if we're at first revision
                 notifyDocumentCreate(doc);
             }
             else if (!doc.rx) {
                 notifyDocumentUpdate(doc);
             }
+
+            console.log(change);
+            console.log("\n\n\n");
         }
     }
     
