@@ -24,6 +24,7 @@ image:
 	--volume ${PWD}:/tmp \
 	--env-file _env \
 	-e IMAGE_NAME="flash-to-pi.img" \
+	-e IMAGE_SIZE="3G" \
 	-e COPY_DIR="/tmp/container/app" \
 	-e SCRIPT_DIR="/tmp/container/scripts" \
 	-e SETUP_SCRIPT="/tmp/pi-setup" \
