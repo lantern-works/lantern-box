@@ -57,19 +57,17 @@ internet() {
   Key="${WIFI_PASS}"
 EOF
   netctl start wlan0-SSID
-  sleep 5
   echo "wireless internet enabled: ${WIFI_SSID}"
 }
 
 hotspot() {
-    local_ssid="LT"
+    local_ssid="lt-${LANTERN_ID}"
     echo "configuring hotspot: ${local_ssid}"
     echo "you will need to reconnect through a shared wireless network..."
     reset
     sleep 1
     netctl stop wlan0-SSID
     create_ap --daemon --no-virt -n wlan0 "$local_ssid"
-    sleep 5
 }
 
 pollinate() {
@@ -77,7 +75,6 @@ pollinate() {
   create_ap --stop wlan0
   sleep 5
   netctl start wlan0-SSID
-  sleep 5
 }
 
 help() {
