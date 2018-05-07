@@ -39,7 +39,6 @@ chmod go-rw /opt/lantern/config.json
 echo "updating netctl wlan0 config..."
 /opt/lantern/bin/wifi-update
 
-
 echo "updating admin password..."
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
 

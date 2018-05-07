@@ -11,7 +11,9 @@
         "pouchdb-core": "*",
         "pouchdb-mapreduce": "*",
         "pouchdb-replication": "*",
-        "sqlite3": "^4.0.0"
+        "sqlite3": "^4.0.0",
+        "node-cmd": "*",
+        "sleep": "*"
     },
     "scripts": {
         "start": "node main.js"
