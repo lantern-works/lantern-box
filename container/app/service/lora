@@ -14,8 +14,10 @@ except Exception,e:
     print("skipping lora for non-rpi interface...")
     sys.exit()
 
-LORA_FREQUENCY = rf95.CH_07_US # 918.2 MHz
-LORA_POWER = 10
+DO_SEND = True
+DO_RECEIVE = True
+LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
+LORA_POWER = 20
 SEND_INTERVAL = 3 # how many seconds should we wait between messages
 LORA_MODEM_CONFIG = (0x78, 0xc4, 0x0C)  # slow and long-range with AGC
 
@@ -142,7 +144,7 @@ def main():
         exitGracefully()
     
     try:
-        if ( isLoRaBusy() ):
+        if isLoRaBusy():
             printNow("radio in use elsewhere...")
             quit(1)
         elif not lora.init(): # returns True if found
@@ -162,13 +164,15 @@ def main():
             printNow("waiting for outgoing messages in queue...")
 
             # use a timed interval to check our queue and send messages
-            rt = RepeatedTimer(7, checkForOutgoing)
-            rt.start()
+            if DO_SEND:
+                rt = RepeatedTimer(7, checkForOutgoing)
+                rt.start()
 
-            # when we're not sending messags, drop into receiving mode
-            printNow("watching airwaves for incoming messages...")
-            while True:
-                checkForIncoming()
+            if DO_RECEIVE:
+                # when we're not sending messags, drop into receiving mode
+                printNow("watching airwaves for incoming messages...")
+                while True:
+                    checkForIncoming()
 
     except KeyboardInterrupt:
         exitGracefully()
