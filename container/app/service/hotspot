@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# when we turn service off, automatically resume back to internet usage...
+
+function finish {
+    /opt/lantern/bin/wireless internet
+}
+
+trap finish EXIT
+/opt/lantern/bin/wireless hotspot
+
+trap : TERM INT; sleep infinity & wait

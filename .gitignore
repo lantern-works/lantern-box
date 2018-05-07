@@ -7,3 +7,4 @@
 _env
 tmp
 NOTES.*
+package-lock.json

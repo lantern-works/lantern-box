@@ -36,13 +36,9 @@ sed -i -e "s/{{db_pass}}/${DB_PASS}/g" /opt/lantern/config.json
 chmod go-rw /opt/lantern/config.json
 
 
-echo "updating netctl wlan0 config..."
-/opt/lantern/bin/wifi-update
 
 echo "updating admin password..."
 echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
-
-
 
 cd /opt/lantern/
 sudo chmod -R o-rwx /opt/lantern

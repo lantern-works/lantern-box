@@ -1,0 +1,100 @@
+#!/bin/bash
+
+function parse_yaml {
+   local prefix=$2
+   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   sed -ne "s|^\($s\):|\1|" \
+        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+   awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+#-----------------------------------------------------------------------------
+
+
+eval $(parse_yaml /opt/lantern/config.yml)
+
+reset() {
+  systemctl stop netctl-auto@wlan0
+  sleep 1
+  ifconfig wlan0 down
+  sleep 1
+  rfkill block wlan
+  sleep 1
+  rfkill unblock wlan
+  sleep 1
+  ifconfig wlan0 up
+  sleep 1
+}
+
+internet() {
+  echo "preparing wireless internet..."
+  if [ "${WIFI_SSID}" == "" ]; then
+    echo "skipping wifi since no SSID provided in _env"
+    exit
+  fi  
+  if [ "${WIFI_PASS}" == "" ]; then
+    echo "skipping wifi since no password for network provided in _env"
+    exit
+  fi
+  create_ap --stop wlan0
+  sleep 5
+  touch /etc/netctl/wlan0-SSID
+  cat <<EOF >"/etc/netctl/wlan0-SSID"
+  Description="${WIFI_DESC}"
+  Interface=wlan0
+  Connection=wireless
+  Security=wpa
+  ESSID="${WIFI_SSID}"
+  IP=dhcp
+  Key="${WIFI_PASS}"
+EOF
+  netctl start wlan0-SSID
+  sleep 5
+  echo "wireless internet enabled: ${WIFI_SSID}"
+}
+
+hotspot() {
+    local_ssid="LT"
+    echo "configuring hotspot: ${local_ssid}"
+    echo "you will need to reconnect through a shared wireless network..."
+    reset
+    sleep 1
+    netctl stop wlan0-SSID
+    create_ap --daemon --no-virt -n wlan0 "$local_ssid"
+    sleep 5
+}
+
+pollinate() {
+  echo "preparing wireless pollinate..."
+  create_ap --stop wlan0
+  sleep 5
+  netctl start wlan0-SSID
+  sleep 5
+}
+
+help() {
+  echo "Please choose between network modes: hotspot, internet, pollinate"
+}
+
+#-----------------------------------------------------------------------------
+
+until
+    cmd=$1
+    if [ -z "$cmd" ]; then
+        help
+    fi
+    shift 1
+    $cmd "$@"
+    [ "$?" -ne 127 ]
+do
+    help
+    exit
+done
