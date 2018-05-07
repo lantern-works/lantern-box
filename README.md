@@ -29,11 +29,11 @@ make image
 After starting up your Lantern, you can SSH as the "admin" user with the password as defined in your \_env file. Next, you can view status of the services by watching these logs:
 
 ```bash
-journalctl -f -u lora.service
+journalctl -f -u lora
 ```
 
 ```bash
-journalctl -f -u http.service
+journalctl -f -u http
 ```
 
 ```bash
