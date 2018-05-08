@@ -16,10 +16,10 @@ function parse_yaml {
       }
    }'
 }
+eval $(parse_yaml /opt/lantern/config.yml)
 #-----------------------------------------------------------------------------
 
 
-eval $(parse_yaml /opt/lantern/config.yml)
 
 reset() {
   systemctl stop netctl-auto@wlan0
@@ -48,7 +48,7 @@ internet() {
   sleep 5
   touch /etc/netctl/wlan0-SSID
   cat <<EOF >"/etc/netctl/wlan0-SSID"
-  Description="${WIFI_DESC}"
+  Description="Lantern Wireless Internet"
   Interface=wlan0
   Connection=wireless
   Security=wpa

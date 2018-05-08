@@ -2,8 +2,6 @@
 
 The Lantern is a portable server for decentralized web applications. This repository contains all software and setup scripts required to build and adapt your own Lantern device.
 
-To get started, rename your "\_env.example" file to "\_env" and modify the placeholder values to meet your needs.
-
 ### Run a Local Server
 
 Our Docker container is modeled after a Raspberry Pi Zero W. This enables us to cache our software dependencies and test as much logic as possible without loading to a physical device. To setup a local instance:
@@ -26,7 +24,7 @@ make image
 [Download Etcher](http://etcher.io) and use this to flash your image onto a MicroSD card 8GB or greater. Your image will be named "flash-to-pi.img" by default and will be located in a "build" folder.
 
 
-After starting up your Lantern, you can SSH as the "admin" user with the password as defined in your \_env file. Next, you can view status of the services by watching these logs:
+After starting up your Lantern, you can SSH as the "admin" user with the password as defined in your config.yml file. You can find this in "container/app/config.yml". Next, you can view status of the services by watching these logs:
 
 ```bash
 journalctl -f -u lora

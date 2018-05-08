@@ -11,10 +11,8 @@ cp -rf /tmp/container/app/* /opt/lantern/
 /tmp/container/system/network.sh # setup discovery and networking
 /tmp/container/system/service.sh # setup custom services
 
-# mirror docker-entrypoint
-/opt/lantern/bin/system-config
-chown -R admin /opt/lantern
-chgrp -R wheel /opt/lantern
+# prepare our system for first boot
+/opt/lantern/bin/init
 echo "---------------------------------------------"
 echo " Your Lantern has been successfully configured"
 echo "---------------------------------------------"

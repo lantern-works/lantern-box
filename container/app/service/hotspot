@@ -10,12 +10,6 @@ function finish {
 trap finish EXIT
 
 
-# persist lantern unique identifier to disk
-echo "generating unique identifier for lantern..."
-LANTERN_ID="$(openssl rand -hex 1)"
-grep 'LANTERN_ID: ' /opt/lantern/config.yml >/dev/null || echo -e "\nLANTERN_ID: ${LANTERN_ID}" >> /opt/lantern/config.yml
-
-
 
 echo "bringing wireless access point online..."
 /opt/lantern/bin/wireless hotspot

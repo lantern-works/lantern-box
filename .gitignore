@@ -5,6 +5,7 @@
 *.tar.xz
 *~
 _env
+config.yml
 tmp
 NOTES.*
 package-lock.json

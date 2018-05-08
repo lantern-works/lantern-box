@@ -1,0 +1,96 @@
+#!/bin/bash
+
+echo "#############################################"
+if [[ -f /boot/config.txt ]]; then
+  echo "## Initialize Raspberry Pi Image"
+else
+  echo "## Initialize Docker Image"
+fi
+echo "#############################################"
+
+
+function parse_yaml {
+   local prefix=$2
+   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   sed -ne "s|^\($s\):|\1|" \
+        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+   awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+
+function set_perms {
+  echo "setting permissions for app directory..."
+  chgrp wheel .
+  chgrp wheel -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
+  chmod g+s .
+  chmod o= -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
+}
+
+
+#-----------------------------------------------------------------------------
+
+# enter into app directory and read config file if available
+cd /opt/lantern/
+
+if [[ -f ./config.yml ]]; then
+  eval $(parse_yaml ./config.yml)
+fi
+
+# adjust database credentials
+echo "updating pouchdb server config..."
+DB_PASS=${DB_PASS:-wins}
+sed -i -e "s/{{db_pass}}/${DB_PASS}/g" ./config.json
+chmod go-rw ./config.json
+
+
+# persist lantern unique identifier to disk
+if [ "${LANTERN_ID}" == "" ];  then
+    echo "generating unique identifier for lantern..."
+    LANTERN_ID="$(openssl rand -hex 1)"
+    grep 'LANTERN_ID: ' ./config.yml >/dev/null || echo -e "\nLANTERN_ID: ${LANTERN_ID}" >> ./config.yml
+fi
+
+
+# refresh node modules and make sure we have everything needed to run services
+SKIP_NPM=${SKIP_NPM:-false}
+if [[ "${SKIP_NPM}" == "true" ]]; then
+  echo "skipping node module installs by request..."
+else
+  echo "installing node modules..."
+  # work-around to make sure sqlite3 is available for PouchDB adapter
+  npm config set unsafe-perm true
+  if [ ! -d "./node_modules/sqlite3" ]; then
+      npm install sqlite3@4 --build-from-source
+      npm install https://github.com/lantern-works/node-websql/tarball/master
+  fi
+  npm install
+  npm config set unsafe-perm false
+  # stop using unsafe permissions for npm once we're done installing
+fi
+
+#-----------------------------------------------------------------------------
+
+if [[ -f /boot/config.txt ]]; then
+  # finish raspberry pi setup
+  echo "updating admin password..."
+  ADMIN_PASS=${ADMIN_PASS:-wins}
+  echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
+  set_perms
+  # echo "encrypting wifi pass..."
+  # WIFI_PASS=`wpa_passphrase ${WIFI_SSID} <<< ${WIFI_PASS} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
+else
+  # make this a docker entrypoint
+  ./service/http & # systemd is not compatible with docker so run service manually
+  set_perms
+  zsh # drop into our shell for convenience
+  trap : TERM INT; sleep infinity & wait # keep machine running
+fi
+

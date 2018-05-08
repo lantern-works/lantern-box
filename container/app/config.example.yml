@@ -1,0 +1,2 @@
+ADMIN_PASS: wins # use this with username "admin" to SSH into the device
+DB_PASS: wins # use this and username "admin" to sign-in to PouchDB
