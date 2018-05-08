@@ -73,7 +73,9 @@ serv.use("/", express.static(static_path));
 
 console.log("============================");
 console.log("  Lantern HTTP Service");
+console.log("  Device ID = " + utils.getLanternID());
 console.log("============================");
+
 
 // download latest version of web app platform...
 utils.checkInternet(function(is_connected) {
