@@ -2,17 +2,17 @@ from stephank/archlinux:armv6-base
 
 EXPOSE 80
 
-# install scripts to prepare system
-RUN mkdir -p /tmp/scripts
-WORKDIR /tmp/scripts
-COPY scripts/hardware .
-RUN ./hardware
-COPY scripts/software .
-RUN ./software
-COPY scripts/network .
-RUN ./network
-COPY scripts/finalize .
-RUN ./finalize
+# install setup scripts to prepare system
+RUN mkdir -p /tmp/system
+WORKDIR /tmp/system
+COPY system/hardware.sh .
+RUN ./hardware.sh
+COPY system/software.sh .
+RUN ./software.sh
+COPY system/network.sh .
+RUN ./network.sh
+COPY system/finalize.sh .
+RUN ./finalize.sh
 
 
 # install web server

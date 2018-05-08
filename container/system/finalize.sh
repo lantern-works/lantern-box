@@ -22,6 +22,7 @@ systemctl enable http.service
 
 if [[ -f /boot/config.txt ]]; then
 
+# hotspot service
     touch /etc/systemd/system/hotspot.service
     cat <<EOF >"/etc/systemd/system/hotspot.service"
     [Unit]
@@ -39,7 +40,7 @@ EOF
 
 
 
-    # lora service
+# lora service
     touch /etc/systemd/system/lora.service
     cat <<EOF >"/etc/systemd/system/lora.service"
 [Unit]

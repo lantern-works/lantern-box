@@ -6,10 +6,10 @@ echo "---------------------------------------------"
 
 # achieve parallel results as dockerfile
 cp -rf /tmp/container/app/* /opt/lantern/
-/tmp/container/scripts/hardware # configure hardware
-/tmp/container/scripts/software # setup all software needed
-/tmp/container/scripts/network # setup discovery and networking
-/tmp/container/scripts/finalize # setup user accounts and service
+/tmp/container/system/hardware.sh # configure hardware
+/tmp/container/system/software.sh # setup all software needed
+/tmp/container/system/network.sh # setup discovery and networking
+/tmp/container/system/finalize.sh # setup user accounts and service
 
 # mirror docker-entrypoint
 /opt/lantern/bin/system-config
