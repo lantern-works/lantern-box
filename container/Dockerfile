@@ -11,8 +11,8 @@ COPY system/software.sh .
 RUN ./software.sh
 COPY system/network.sh .
 RUN ./network.sh
-COPY system/finalize.sh .
-RUN ./finalize.sh
+COPY system/service.sh .
+RUN ./service.sh
 
 
 # install web server

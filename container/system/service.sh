@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "#############################################"
-echo "## Finalize Setup "
+echo "## Add Services "
 echo "#############################################"
 
 # http service
@@ -55,6 +55,7 @@ WantedBy=multi-user.target
 EOF
     systemctl enable lora.service
 fi
+
 
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin

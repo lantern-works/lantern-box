@@ -9,7 +9,7 @@ cp -rf /tmp/container/app/* /opt/lantern/
 /tmp/container/system/hardware.sh # configure hardware
 /tmp/container/system/software.sh # setup all software needed
 /tmp/container/system/network.sh # setup discovery and networking
-/tmp/container/system/finalize.sh # setup user accounts and service
+/tmp/container/system/service.sh # setup custom services
 
 # mirror docker-entrypoint
 /opt/lantern/bin/system-config
