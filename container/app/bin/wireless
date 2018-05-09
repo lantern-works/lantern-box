@@ -61,6 +61,10 @@ EOF
 }
 
 hotspot() {
+    if [ "${LANTERN_ID}" == "" ]; then
+      echo "please set your device id with init before running hotspot"
+      exit
+    fi  
     local_ssid="lt-${LANTERN_ID}"
     echo "configuring hotspot: ${local_ssid}"
     echo "you will need to reconnect through a shared wireless network..."

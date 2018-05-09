@@ -51,14 +51,6 @@ sed -i -e "s/{{db_pass}}/${DB_PASS}/g" ./config.json
 chmod go-rw ./config.json
 
 
-# persist lantern unique identifier to disk
-if [ "${LANTERN_ID}" == "" ];  then
-    echo "generating unique identifier for lantern..."
-    LANTERN_ID="$(openssl rand -hex 1)"
-    grep 'LANTERN_ID: ' ./config.yml >/dev/null || echo -e "\nLANTERN_ID: ${LANTERN_ID}" >> ./config.yml
-fi
-
-
 # refresh node modules and make sure we have everything needed to run services
 SKIP_NPM=${SKIP_NPM:-false}
 if [[ "${SKIP_NPM}" == "true" ]]; then

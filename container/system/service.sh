@@ -4,7 +4,8 @@ echo "#############################################"
 echo "## Add Services "
 echo "#############################################"
 
-# http service
+# http service    
+echo "installing http service..."
 touch /etc/systemd/system/http.service
 cat <<EOF >"/etc/systemd/system/http.service"
 [Unit]
@@ -21,26 +22,26 @@ systemctl enable http.service
 
 
 if [[ -f /boot/config.txt ]]; then
-
-# hotspot service
+    echo "installing hotspot service..."
+    # hotspot service
     touch /etc/systemd/system/hotspot.service
     cat <<EOF >"/etc/systemd/system/hotspot.service"
-    [Unit]
-    Description=Lantern Hotspot Service
+[Unit]
+Description=Lantern Hotspot Service
 
-    [Service]
-    ExecStart=/opt/lantern/service/hotspot
-    Restart=always
+[Service]
+ExecStart=/opt/lantern/service/hotspot
+Restart=always
 
-    [Install]
-    WantedBy=multi-user.target
+[Install]
+WantedBy=multi-user.target
 EOF
     systemctl enable hotspot.service
 
 
 
-
-# lora service
+    # lora service
+    echo "installing lora service..."
     touch /etc/systemd/system/lora.service
     cat <<EOF >"/etc/systemd/system/lora.service"
 [Unit]

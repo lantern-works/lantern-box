@@ -9,6 +9,7 @@ function finish {
 
 trap finish EXIT
 
+/opt/lantern/bin/set-device-id
 
 
 echo "bringing wireless access point online..."
