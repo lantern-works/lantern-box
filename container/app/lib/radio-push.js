@@ -1,4 +1,3 @@
-var PouchDB = require("./pouchdb");
 var utils = require("./utils");
 var path = require("path");
 var spawn = require('child_process').spawn;
@@ -6,8 +5,7 @@ var spawn = require('child_process').spawn;
 module.exports = function RadioPush(db) {
 
     var self = {};
-    var update_log = {}; // use to prevent duplicate send of the same data
-    var ping = 60 * 1000; // every 1m tell other lanterns we exist
+    var ping = 20 * 1000; // every 20s tell other lanterns we exist
 
     //------------------------------------------------------------------------
     /**
@@ -15,16 +13,6 @@ module.exports = function RadioPush(db) {
     **/
     function addMessageToQueue(id, msg) {
         if (!msg) return;
-
-        if (update_log.hasOwnProperty(id)) {
-            if (update_log[id] == msg) {
-                console.log("[radio] skip duplicate message " + msg);
-                return;
-            }
-        }
-
-        // @todo manage memory footprint
-        update_log[id] = msg;
 
         if (utils.isLantern()) {
             console.log("[radio] push message: " + msg);
@@ -79,7 +67,7 @@ module.exports = function RadioPush(db) {
             console.log("[radio] missing lantern id");
         }
         else {
-            addMessageToQueue(id, "^d:"+ id + "::st=1");
+            addMessageToQueue(id, "^d:"+ id);
         }
     }
 
