@@ -47,8 +47,8 @@ fi
 # adjust database credentials
 echo "updating pouchdb server config..."
 DB_PASS=${DB_PASS:-wins}
-sed -i -e "s/{{db_pass}}/${DB_PASS}/g" ./config.json
-chmod go-rw ./config.json
+sed -i -e "s/{{db_pass}}/${DB_PASS}/g" ./db/db-conf.json
+chmod go-rw ./db/db-conf.json
 
 
 # refresh node modules and make sure we have everything needed to run services

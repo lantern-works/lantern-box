@@ -46,7 +46,7 @@ function updateWebPlatform() {
 }
 
 function dbRoute() {
-    var data_dir = __dirname + "/data/";
+    var data_dir = __dirname + "/db/";
     if (!fs.existsSync(data_dir)) {
         fs.mkdirSync(data_dir);
     }
@@ -54,7 +54,10 @@ function dbRoute() {
     return require("express-pouchdb")(PouchDB.defaults({
         prefix: data_dir,
         adapter: "websql"
-    }));
+    }), {
+        configPath: "./db/db-conf.json",
+        logPath: "./db/db-log.txt"
+    });
 }
 
 

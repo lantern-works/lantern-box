@@ -35,7 +35,7 @@ journalctl -f -u http
 ```
 
 ```bash
-tail -f /opt/lantern/log.txt
+tail -f /opt/lantern/db/db-log.txt
 ```
 
 
