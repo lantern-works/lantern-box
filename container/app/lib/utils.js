@@ -10,6 +10,7 @@ module.exports = function Utils() {
     var config_file = path.resolve(__dirname + "/../config.yml");
     var config = config || yaml.safeLoad(fs.readFileSync(config_file, 'utf8'));
     
+
     self.isLantern = function() {
         try {
             return fs.statSync("/boot/config.txt").isFile();
@@ -45,6 +46,33 @@ module.exports = function Utils() {
         if (config.hasOwnProperty("LANTERN_ID")) {
             return config.LANTERN_ID;
         }
+    };
+
+
+    self.startCloudSync = function() {
+
+        if (process.env.CLOUD) {
+            console.log("skip sync since this is in the cloud...");
+            return;
+        }
+
+        var remote_db = self.makeRemotePouchDB();
+
+        var sync = db.sync(remote_db, { live: true, retry: true})
+            .on('change', function (change) {
+                if (change.direction) {
+                    console.log("[utils] " + change.direction  + " docs: " + 
+                            change.change.docs_read + " read / " + 
+                            change.change.docs_written + " written"
+                        );
+                }
+                else {
+                    console.log("[utils] change: ", change);
+                }
+            })
+            .on('error', function (err) {
+                console.log("err: ", err);
+            });
     };
 
     return self; 

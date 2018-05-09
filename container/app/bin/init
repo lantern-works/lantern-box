@@ -32,10 +32,12 @@ function set_perms {
   chgrp wheel -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
   chmod g+s .
   chmod o= -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
+  chmod g+rw -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
 }
 
 
 #-----------------------------------------------------------------------------
+
 
 # enter into app directory and read config file if available
 cd /opt/lantern/

@@ -2,25 +2,37 @@ var express = require("express");
 var fs = require("fs");
 var path = require("path");
 var execSync = require("child_process").execSync;
-var cors = require("./middleware/cors");
-var rewrite = require("./middleware/rewrite");
-var captive = require("./middleware/captive");
+
+var cors = require("./lib/cors-middleware");
+var rewrite = require("./lib/rewrite-middleware");
+var captive = require("./lib/captive-middleware");
 var utils = require("./lib/utils");
-var PouchDB = require("./lib/pouchdb");
-var CloudSync = require("./lib/cloud-sync");
 var RadioPush = require("./lib/radio-push");
 
-var serv, port, db, static_path;
+var PouchDB, db, serv, port;
+
 
 
 //----------------------------------------------------------------------------
+/*
+* Set up database server
+*/
+// custom build of PouchDB to meet our SQLite requirements
+PouchDB = require('pouchdb-core')
+            .plugin(require('pouchdb-adapter-node-websql'))
+            .plugin(require('pouchdb-adapter-http'))
+            .plugin(require('pouchdb-mapreduce'))
+            .plugin(require('pouchdb-replication'));
 
+db = new PouchDB(utils.getLocalDatabaseURI());
+
+
+
+//----------------------------------------------------------------------------
 function startServer() {
     // finally, start up server
     serv.listen(port, function() {
-        db = new PouchDB(utils.getLocalDatabaseURI());
         var push = RadioPush(db);
-        //var sync = CloudSync(db);
 
         console.log("[server] ready on port %s ...", port);
         db.info()
@@ -45,33 +57,39 @@ function updateWebPlatform() {
     console.log("[server] latest web platform loaded");
 }
 
-function dbRoute() {
+function routeDatabase() {
     var data_dir = __dirname + "/db/";
     if (!fs.existsSync(data_dir)) {
         fs.mkdirSync(data_dir);
     }
-    
-    return require("express-pouchdb")(PouchDB.defaults({
+    var db_router = require("express-pouchdb")(PouchDB.defaults({
         prefix: data_dir,
         adapter: "websql"
     }), {
         configPath: "./db/db-conf.json",
         logPath: "./db/db-log.txt"
     });
+    serv.use("/db/", cors, db_router);
+}
+
+function routeStatic() {
+    var static_path = path.resolve(__dirname + "/public/");
+    serv.use("/", express.static(static_path));
 }
 
 
 
-//----------------------------------------------------------------------------
 
-// setup app and database server...
+//----------------------------------------------------------------------------
+/*
+* Set up application server and routing
+*/
 serv = express();
 port = (process.env.TERM_PROGRAM ? 8080 : 80);
-static_path = path.resolve(__dirname + "/public/");
 serv.disable("x-powered-by");
 serv.use(rewrite);
-serv.use("/db/", cors, dbRoute());
-serv.use("/", express.static(static_path));
+routeDatabase(serv);
+routeStatic(serv);
 
 
 console.log("============================");
