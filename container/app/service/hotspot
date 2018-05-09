@@ -5,8 +5,10 @@
 function finish {
     echo "attempting to restore wireless internet..."
     /opt/lantern/bin/wireless internet
+    exit 0
 }
 
+trap finish SIGTERM
 trap finish EXIT
 
 /opt/lantern/bin/set-device-id
@@ -15,4 +17,4 @@ trap finish EXIT
 echo "bringing wireless access point online..."
 /opt/lantern/bin/wireless hotspot
 
-trap : TERM INT; sleep infinity & wait
+sleep infinity & wait

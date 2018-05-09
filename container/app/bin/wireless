@@ -16,10 +16,11 @@ function parse_yaml {
       }
    }'
 }
-eval $(parse_yaml /opt/lantern/config.yml)
 #-----------------------------------------------------------------------------
 
-
+if [[ -f /opt/lantern/config.yml ]]; then
+  eval $(parse_yaml /opt/lantern/config.yml)
+fi
 
 reset() {
   systemctl stop netctl-auto@wlan0
