@@ -3,6 +3,7 @@
     "version": "0.0.4",
     "dependencies": {
         "express": "*",
+        "body-parser": "*",
         "express-pouchdb": "*",
         "js-yaml": "*",
         "npm": "^6.0.0",

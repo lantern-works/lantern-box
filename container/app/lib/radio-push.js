@@ -5,7 +5,7 @@ var spawn = require('child_process').spawn;
 module.exports = function RadioPush(db) {
 
     var self = {};
-    var ping = 20 * 1000; // every 20s tell other lanterns we exist
+    var ping = 40 * 1000; // every 40s tell other lanterns we exist
 
     //------------------------------------------------------------------------
     /**

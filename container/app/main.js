@@ -2,7 +2,7 @@ var express = require("express");
 var fs = require("fs");
 var path = require("path");
 var execSync = require("child_process").execSync;
-
+var bodyParser = require("body-parser");
 var cors = require("./lib/cors-middleware");
 var rewrite = require("./lib/rewrite-middleware");
 var captive = require("./lib/captive-middleware");
@@ -43,7 +43,7 @@ function routeDatabase() {
         configPath: "./db/db-conf.json",
         logPath: "./db/db-log.txt"
     });
-    serv.use("/db/", cors, db_router);
+    serv.use("/db/", db_router);
 }
 
 function routeStatic() {
@@ -52,8 +52,17 @@ function routeStatic() {
 }
 
 
-function routeAPI() {
-    serv.post("/api/ui", function() {
+function routeCommands() {
+    serv.post("/api/network", bodyParser.json(), function(req, res) {
+        if (req.body.ssid && req.body.pass) {
+            //@todo require 8 characters or greater
+            console.log("[server] setting wireless network: " + req.body.ssid);
+            var stdout = execSync(__dirname + "/bin/wireless register " + req.body.ssid + " " + req.body.pass);
+            res.status(201).send("OK");            
+        }
+    });
+
+    serv.post("/api/interface", function(req, res) {
         console.log("[server] internet access: active");
         console.log("[server] checking for updated web platform");
         var stdout = execSync(__dirname + "/bin/platform-update");
@@ -70,10 +79,10 @@ function routeAPI() {
 serv = express();
 serv.disable("x-powered-by");
 serv.use(rewrite);
-routeDatabase(serv);
-routeAPI()
-routeStatic(serv);
-
+serv.use(cors);
+routeCommands();
+routeDatabase();
+routeStatic();
 
 console.log("============================");
 console.log("  Lantern HTTP Service");
@@ -81,16 +90,14 @@ console.log("  Device ID = " + utils.getLanternID());
 console.log("============================");
 
 // start up server
-
 port = (process.env.TERM_PROGRAM ? 8080 : 80);
 serv.listen(port, function() {
-    var push = RadioPush(db);
-
     console.log("[server] ready on port %s ...", port);
     db.info()
         .then(function(response) {
             console.log("[server] database starting doc count: " + response.doc_count);
             console.log("[server] database update sequence: " + response.update_seq);
+            var push = RadioPush(db);
             push.start();
 
     })

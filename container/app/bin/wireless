@@ -35,30 +35,37 @@ reset() {
   sleep 1
 }
 
-internet() {
-  echo "preparing wireless internet..."
-  if [ "${WIFI_SSID}" == "" ]; then
-    echo "skipping wifi since no SSID provided in _env"
-    exit
-  fi  
-  if [ "${WIFI_PASS}" == "" ]; then
-    echo "skipping wifi since no password for network provided in _env"
-    exit
+
+register() {
+  wifi_ssid=$1
+  echo "registering new wireless network: $wifi_ssid"
+  
+  echo "encrypting wifi pass..."
+  wifi_pass=`wpa_passphrase ${wifi_ssid} <<< ${2} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
+
+  if [[ -f /etc/netctl/wlan0-SSID ]]; then
+    rm /etc/netctl/wlan0-SSID > /dev/null
   fi
-  create_ap --stop wlan0
-  sleep 5
+
   touch /etc/netctl/wlan0-SSID
   cat <<EOF >"/etc/netctl/wlan0-SSID"
   Description="Lantern Wireless Internet"
   Interface=wlan0
   Connection=wireless
   Security=wpa
-  ESSID="${WIFI_SSID}"
+  ESSID="${wifi_ssid}"
   IP=dhcp
-  Key="${WIFI_PASS}"
+  Key="${wifi_pass}"
 EOF
+  echo "wrote new wlan0-SSID file..."
+}
+
+internet() {
+  echo "preparing wireless internet..."
+  create_ap --stop wlan0
+  sleep 5
   netctl start wlan0-SSID
-  echo "wireless internet enabled: ${WIFI_SSID}"
+  echo "wireless internet enabled..."
 }
 
 hotspot() {
@@ -81,6 +88,8 @@ pollinate() {
   sleep 5
   netctl start wlan0-SSID
 }
+
+
 
 help() {
   echo "Please choose between network modes: hotspot, internet, pollinate"
