@@ -67,6 +67,7 @@ function routeCommands() {
         console.log("[server] checking for updated web platform");
         var stdout = execSync(__dirname + "/bin/platform-update");
         console.log("[server] latest web platform loaded");
+        res.status(201).send("OK");
     });
 }
 

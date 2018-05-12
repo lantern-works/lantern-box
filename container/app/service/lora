@@ -8,11 +8,7 @@ import os
 from threading import Timer
 from persistqueue import FIFOSQLiteQueue
 
-try:
-    import rf95
-except Exception,e:
-    print("skipping lora for non-rpi interface...")
-    sys.exit()
+import rf95
 
 DO_SEND = True
 DO_RECEIVE = True

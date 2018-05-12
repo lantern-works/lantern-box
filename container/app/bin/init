@@ -78,8 +78,6 @@ if [[ -f /boot/config.txt ]]; then
   ADMIN_PASS=${ADMIN_PASS:-wins}
   echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
   set_perms
-  # echo "encrypting wifi pass..."
-  # WIFI_PASS=`wpa_passphrase ${WIFI_SSID} <<< ${WIFI_PASS} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
 else
   # make this a docker entrypoint
   ./service/http & # systemd is not compatible with docker so run service manually

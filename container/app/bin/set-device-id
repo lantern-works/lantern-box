@@ -1,5 +1,5 @@
 #!/bin/bash
-id="$(openssl rand -hex 1)"
+id="$(openssl rand -hex 2)"
 touch /opt/lantern/config.yml
 grep 'LANTERN_ID: ' /opt/lantern/config.yml >/dev/null || echo -e "\nLANTERN_ID: ${id}" >> /opt/lantern/config.yml
 echo "unique id set for lantern..."
