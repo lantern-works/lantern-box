@@ -54,11 +54,13 @@ function routeStatic() {
 
 function routeCommands() {
     serv.post("/api/network", bodyParser.json(), function(req, res) {
-        if (req.body.ssid && req.body.pass) {
-            //@todo require 8 characters or greater
+        if (req.body.ssid && req.body.pass && req.body.pass >= 8) {
             console.log("[server] setting wireless network: " + req.body.ssid);
             var stdout = execSync(__dirname + "/bin/wireless register " + req.body.ssid + " " + req.body.pass);
             res.status(201).send("OK");            
+        }
+        else {
+            res.status(412).send("NOK");
         }
     });
 
