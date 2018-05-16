@@ -7,6 +7,6 @@ else
 fi
 
 echo "downloading web platform from: ${uri}"
-wget "${uri}" -O /tmp/lantern-web.zip
+curl -L -o /tmp/lantern-web.zip "${uri}"
 rm -rf /opt/lantern/public/*
 unzip "/tmp/lantern-web.zip" -d /opt/lantern/public

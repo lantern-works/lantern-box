@@ -70,6 +70,10 @@ else
   # stop using unsafe permissions for npm once we're done installing
 fi
 
+
+# get latest web app loaded
+./bin/ui-update
+
 #-----------------------------------------------------------------------------
 
 if [[ -f /boot/config.txt ]]; then
