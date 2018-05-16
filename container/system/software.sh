@@ -17,10 +17,11 @@ pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
 
+pip2 install --upgrade pip
 
 # install customized RF95 library for LoRa based on RadioHead
 wget https://raw.githubusercontent.com/lantern-works/pyRF95/master/rf95.py -P /usr/lib/python2.7/site-packages/
-pip2 install RPi.GPIO spidev persist-queue
+pip2 install persist-queue PyYAML spidev RPi.GPIO
 
 
 # install SublimeText remote editor for dev convenience

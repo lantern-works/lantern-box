@@ -1,0 +1,5 @@
+#!/bin/bash
+freq=$1
+touch /opt/lantern/config.yml
+grep 'FREQUENCY: ' /opt/lantern/config.yml >/dev/null || echo -e "\nFREQUENCY: ${1}" >> /opt/lantern/config.yml
+echo "frequency ${1} set for lantern..."

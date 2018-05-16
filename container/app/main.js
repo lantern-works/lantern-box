@@ -30,7 +30,9 @@ db = new PouchDB(utils.getLocalDatabaseURI());
 
 //----------------------------------------------------------------------------
 
-
+/*
+* Providing direct visibility and access to the PouchDB database through HTTP
+*/
 function routeDatabase() {
     var data_dir = __dirname + "/db/";
     if (!fs.existsSync(data_dir)) {
@@ -46,29 +48,56 @@ function routeDatabase() {
     serv.use("/db/", db_router);
 }
 
+/*
+* Serves the web application / user interface, which may be updated over time
+*/
 function routeStatic() {
     var static_path = path.resolve(__dirname + "/public/");
     serv.use("/", express.static(static_path));
 }
 
-
+/*
+* API commands used by scripts, web interface and administrative users
+*/
 function routeCommands() {
-    serv.post("/api/network", bodyParser.json(), function(req, res) {
+    serv.post("/api/config/ssid", bodyParser.json(), function(req, res) {
         if (req.body.ssid && req.body.pass && req.body.pass >= 8) {
-            console.log("[server] setting wireless network: " + req.body.ssid);
+            console.log("[server] setting wireless ssid: " + req.body.ssid);
             var stdout = execSync(__dirname + "/bin/wireless register " + req.body.ssid + " " + req.body.pass);
-            res.status(201).send("OK");            
+            res.status(201).send("OK");
         }
         else {
             res.status(412).send("NOK");
         }
     });
 
-    serv.post("/api/interface", function(req, res) {
-        console.log("[server] internet access: active");
-        console.log("[server] checking for updated web platform");
-        var stdout = execSync(__dirname + "/bin/platform-update");
-        console.log("[server] latest web platform loaded");
+    serv.post("/api/config/frequency", bodyParser.json(), function(req, res) {
+        if (req.body.frequency) {
+            try {
+                var freq = Number(req.body.frequency);
+                
+                if (freq < 400 || freq > 950) {
+                    return res.status(401).send("NOK");
+                }
+
+                console.log("[server] setting lora frequency: " + req.body.ssid);
+                var stdout = execSync(__dirname + "/bin/set-frequency " + req.body.frequency);
+                res.status(201).send("OK");
+            }
+            catch(e) {
+                res.status(401).send("NOK");
+                console.log(e);
+            }
+        }
+        else {
+            res.status(412).send("NOK");
+        }
+    });
+
+    serv.post("/api/control/interface", function(req, res) {
+        console.log("[server] checking for updated user interface");
+        var stdout = execSync(__dirname + "/bin/ui-update");
+        console.log("[server] latest user interface loaded");
         res.status(201).send("OK");
     });
 }

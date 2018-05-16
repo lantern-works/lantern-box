@@ -33,6 +33,10 @@ module.exports = function Utils() {
         return db_uri + "/db/lantern";
     };
 
+    self.getRadioFrequency = function() {
+        return config.FREQUENCY || 924.68;
+    };
+
     self.checkInternet = function(cb) {
         dns.lookup("lantern.works",function(err) {
             if (err && err.code == "ENOTFOUND") {

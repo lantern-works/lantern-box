@@ -5,6 +5,8 @@ import string
 import time
 import signal
 import os
+import yaml
+
 from threading import Timer
 from persistqueue import FIFOSQLiteQueue
 
@@ -12,7 +14,7 @@ import rf95
 
 DO_SEND = True
 DO_RECEIVE = True
-LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
+DEFAULT_LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
 LORA_POWER = 20
 SEND_INTERVAL = 3 # how many seconds should we wait between messages
 LORA_MODEM_CONFIG = (0x78, 0xc4, 0x0C)  # slow and long-range with AGC
@@ -152,11 +154,22 @@ def main():
             signal.signal(signal.SIGTERM, handleStopSignals)
             did_init = True
 
+
+            # determine which frequency to broadcast on
+            try:
+                y = yaml.load(open("/opt/lantern/config.yml"))
+                freq = y.FREQUENCY
+            except Exception,e:
+                printNow("using default frequency...")
+                freq = DEFAULT_LORA_FREQUENCY
+
+            lora.set_frequency(freq)
+            printNow("radio ready @ " + str(freq) + " MHz")
+
+
             # setup RF95/RF96 modem for our long-range, peer-to-peer data
-            lora.set_frequency(LORA_FREQUENCY)
             lora.set_tx_power(LORA_POWER)
             lora.set_modem_config(LORA_MODEM_CONFIG)
-            printNow("radio ready @ " + str(LORA_FREQUENCY) + " MHz")
             printNow("waiting for outgoing messages in queue...")
 
             # use a timed interval to check our queue and send messages
