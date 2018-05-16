@@ -1,2 +1,4 @@
+# rename this file to config.yml to deploy these settings
 ADMIN_PASS: wins # use this with username "admin" to SSH into the device
 DB_PASS: wins # use this and username "admin" to sign-in to PouchDB
+SKIP_NPM: false # if you have all the node modules you need, skip installs

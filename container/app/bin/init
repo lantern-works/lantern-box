@@ -33,11 +33,12 @@ function set_perms {
   chmod g+s .
   chmod o= -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
   chmod g+rw -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
+  chgrp wheel ./node_modules
+  chmod g+rwx ./node_modules
 }
 
 
 #-----------------------------------------------------------------------------
-
 
 # enter into app directory and read config file if available
 cd /opt/lantern/
@@ -82,6 +83,7 @@ if [[ -f /boot/config.txt ]]; then
   ADMIN_PASS=${ADMIN_PASS:-wins}
   echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
   set_perms
+  sync
 else
   # make this a docker entrypoint
   ./service/http & # systemd is not compatible with docker so run service manually

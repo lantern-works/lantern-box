@@ -6,7 +6,8 @@ q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
 if (len(sys.argv) > 1):
     sys.argv.pop(0)
     for item in sys.argv:
-        print("adding: " + str(item))
-        q.put(str(item))
+        val =  str(item).encode("utf-8")
+        print("adding: " + val)
+        q.put(val)
 else:
     print("no message to queue...")

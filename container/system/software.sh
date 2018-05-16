@@ -19,11 +19,13 @@ ln -s /usr/bin/python2-config /bin/python-config
 
 pip2 install --upgrade pip
 
-# install customized RF95 library for LoRa based on RadioHead
-wget https://raw.githubusercontent.com/lantern-works/pyRF95/master/rf95.py -P /usr/lib/python2.7/site-packages/
 pip2 install persist-queue PyYAML spidev RPi.GPIO
 
+# install customized RF95 library for LoRa based on RadioHead
+curl -L -o /usr/lib/python2.7/site-packages/rf95.py https://raw.githubusercontent.com/lantern-works/pyRF95/master/rf95.py
 
 # install SublimeText remote editor for dev convenience
-wget -O /usr/local/bin/rsub https://raw.github.com/aurora/rmate/master/rmate
+curl -L -o /usr/local/bin/rsub https://raw.githubusercontent.com/aurora/rmate/master/rmate
 chmod a+x /usr/local/bin/rsub
+
+sync
