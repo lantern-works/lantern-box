@@ -1,4 +1,5 @@
 #!/bin/bash
 cd /opt/lantern/
+/opt/lantern/bin/make-device-id
 npm start
 trap : TERM INT; sleep infinity & wait
