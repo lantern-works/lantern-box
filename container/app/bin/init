@@ -71,6 +71,9 @@ else
   # stop using unsafe permissions for npm once we're done installing
 fi
 
+# generate a unique device id that persists on disk
+./bin/make-device-id
+
 
 # get latest web app loaded
 ./bin/ui-update

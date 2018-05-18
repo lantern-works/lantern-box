@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# first make sure we have a device identifier
-/opt/lantern/bin/make-device-id
 
 # when we turn service off, automatically resume back to internet usage...
 function finish {
