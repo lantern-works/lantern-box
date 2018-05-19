@@ -16,4 +16,4 @@ if [[ -f /boot/config.txt ]]; then
 
 else
     echo "skipping network setup within docker container..."    
-fi
+fisync

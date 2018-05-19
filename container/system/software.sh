@@ -13,6 +13,7 @@ pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     nodejs npm python2 python2-pip base-devel \
     create_ap avahi nss-mdns wpa_supplicant \
     wpa_actiond ifplugd crda dialog unzip
+sync
 
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config

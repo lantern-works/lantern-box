@@ -25,3 +25,4 @@ if [[ -f /boot/config.txt ]]; then
 else
     echo "skipping hardware setup within docker container..."    
 fi
+sync
