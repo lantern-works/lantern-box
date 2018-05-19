@@ -43,12 +43,12 @@ register() {
   echo "encrypting wifi pass..."
   wifi_pass=`wpa_passphrase ${wifi_ssid} <<< ${2} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
 
-  if [[ -f /etc/netctl/wlan0-SSID ]]; then
-    rm /etc/netctl/wlan0-SSID > /dev/null
+  if [[ -f /etc/netctl/wireless-internet ]]; then
+    rm /etc/netctl/wireless-internet > /dev/null
   fi
 
-  touch /etc/netctl/wlan0-SSID
-  cat <<EOF >"/etc/netctl/wlan0-SSID"
+  touch /etc/netctl/wireless-internet
+  cat <<EOF >"/etc/netctl/wireless-internet"
   Description="Lantern Wireless Internet"
   Interface=wlan0
   Connection=wireless
@@ -57,14 +57,14 @@ register() {
   IP=dhcp
   Key="${wifi_pass}"
 EOF
-  echo "wrote new wlan0-SSID file..."
+  echo "wrote new wireless-internet file..."
 }
 
 internet() {
   echo "preparing wireless internet..."
   create_ap --stop wlan0
   sleep 5
-  netctl start wlan0-SSID
+  netctl start wireless-internet
   echo "wireless internet enabled..."
 }
 
@@ -78,7 +78,7 @@ hotspot() {
     echo "you will need to reconnect through a shared wireless network..."
     reset
     sleep 1
-    netctl stop wlan0-SSID
+    netctl stop wireless-internet
     create_ap --daemon --no-virt -n wlan0 "$local_ssid"
 }
 
@@ -86,7 +86,7 @@ pollinate() {
   echo "preparing wireless pollinate..."
   create_ap --stop wlan0
   sleep 5
-  netctl start wlan0-SSID
+  netctl start wireless-internet
 }
 
 
