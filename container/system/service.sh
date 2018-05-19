@@ -66,3 +66,4 @@ echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
 chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
 chown admin. /home/admin/.zshrc
 echo 'cd /opt/lantern/' > /home/admin/.zshrc
+echo 'export PATH=/opt/lantern/bin/:/opt/lantern/service:$PATH' > /home/admin/.zshrc
