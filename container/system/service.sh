@@ -65,5 +65,6 @@ echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
 # set zsh as the default shell
 chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
 chown admin. /home/admin/.zshrc
-echo 'cd /opt/lantern/' > /home/admin/.zshrc
-echo 'export PATH=/opt/lantern/bin/:/opt/lantern/service:$PATH' > /home/admin/.zshrcsync
+echo 'cd /opt/lantern/' >> /home/admin/.zshrc
+echo 'export PATH=/opt/lantern/bin/:/opt/lantern/service:$PATH' >> /home/admin/.zshrc
+sync

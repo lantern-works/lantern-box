@@ -1,5 +1,15 @@
 #!/bin/bash
 id="$(openssl rand -hex 2)"
 touch /opt/lantern/config.yml
-grep 'LANTERN_ID: ' /opt/lantern/config.yml >/dev/null || echo -e "\nLANTERN_ID: ${id}" >> /opt/lantern/config.yml
-echo "unique id set for lantern..."
+
+existing_id=`grep 'LANTERN_ID: ' /opt/lantern/config.yml`
+
+if [[ $existing_id != "" ]]; then
+    echo "found existing id for lantern:"
+    echo $existing_id
+else
+    echo -e "\nLANTERN_ID: ${id}" >> /opt/lantern/config.yml
+    echo "unique id set for lantern: ${id}"
+    sudo sed -i -e 's/'{{device_id}}'/'LANTERN-${id}'/g' /opt/lantern/network/hostapd.conf
+    echo "setting access point name: LANTERN-${id}"
+fi
