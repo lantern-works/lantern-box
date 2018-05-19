@@ -158,7 +158,7 @@ def main():
             # determine which frequency to broadcast on
             try:
                 y = yaml.load(open("/opt/lantern/config.yml"))
-                freq = y.FREQUENCY
+                freq = y["FREQUENCY"]
             except Exception,e:
                 printNow("using default frequency...")
                 freq = DEFAULT_LORA_FREQUENCY
