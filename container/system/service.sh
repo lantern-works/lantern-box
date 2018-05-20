@@ -22,21 +22,21 @@ systemctl enable http.service
 
 
 if [[ -f /boot/config.txt ]]; then
-    echo "installing hotspot service..."
-    # hotspot service
-    touch /etc/systemd/system/hotspot.service
-    cat <<EOF >"/etc/systemd/system/hotspot.service"
+    echo "installing access point service..."
+    # ap service
+    touch /etc/systemd/system/ap.service
+    cat <<EOF >"/etc/systemd/system/ap.service"
 [Unit]
-Description=Lantern Hotspot Service
+Description=Lantern Access Point Service
 
 [Service]
-ExecStart=/opt/lantern/service/hotspot
+ExecStart=/opt/lantern/service/ap
 Restart=always
 
 [Install]
 WantedBy=multi-user.target
 EOF
-    systemctl enable hotspot.service
+    systemctl enable ap.service
 
 
 

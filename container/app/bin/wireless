@@ -6,6 +6,28 @@ if [[ $UID != 0 ]]; then
     exit 1
 fi
 
+function parse_yaml {
+   local prefix=$2
+   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+   sed -ne "s|^\($s\):|\1|" \
+        -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+   awk -F$fs '{
+      indent = length($1)/2;
+      vname[indent] = $2;
+      for (i in vname) {if (i > indent) {delete vname[i]}}
+      if (length($3) > 0) {
+         vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+         printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+      }
+   }'
+}
+#-----------------------------------------------------------------------------
+
+if [[ -f /opt/lantern/config.yml ]]; then
+  eval $(parse_yaml /opt/lantern/config.yml)
+fi
+
 reset() {
   systemctl stop netctl-auto@wlan0
   sleep 1
@@ -46,37 +68,37 @@ EOF
 
 internet() {
   echo "preparing wireless internet..."
-  systemctl stop hostapd
+  create_ap --stop wlan0
   sleep 5
   netctl start wireless-internet
   echo "wireless internet enabled..."
 }
 
-hotspot() {
-    echo "configuring access point. you may need to reconnect..."
-    # shut down any existing connections
+ap() {
+    if [ "${LANTERN_ID}" == "" ]; then
+      echo "please set your device id with init before running access point"
+      exit
+    fi  
+    local_ssid="LANTERN-${LANTERN_ID}"
+    echo "configuring access point: ${local_ssid}"
+    echo "you will need to reconnect through a shared wireless network..."
     reset
     sleep 1
     netctl stop wireless-internet
-
-    # setup our access point with static ip
-    cp -rf /opt/lantern/network/hostapd.conf /etc/hostapd/hostapd.conf
-    dnsmasq -C /opt/lantern/network/dnsmasq.conf
-    systemctl enable dhcpcd
-    systemctl start dhcpcd
-    hostapd /opt/lantern/network/hostapd.conf
+    create_ap --daemon --no-virt -n wlan0 "$local_ssid"
 }
 
 pollinate() {
   echo "preparing wireless pollinate..."
-  systemctl stop hostapd
+  create_ap --stop wlan0
   sleep 5
   netctl start wireless-internet
 }
 
 
+
 help() {
-  echo "Please choose between network modes: hotspot, internet, pollinate"
+  echo "Please choose between network modes: ap, internet, pollinate"
 }
 
 #-----------------------------------------------------------------------------

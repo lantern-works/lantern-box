@@ -11,7 +11,7 @@ sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
 pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     bash-completion \
     nodejs npm python2 python2-pip base-devel \
-    hostapd dnsmasq avahi nss-mdns wpa_supplicant \
+    create_ap hostapd dnsmasq avahi nss-mdns wpa_supplicant \
     wpa_actiond ifplugd crda unzip
 
 sync
