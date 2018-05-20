@@ -35,6 +35,7 @@ function parse_yaml {
 function set_perms {
   echo "setting permissions for app directory..."
   chgrp wheel .
+  chmod g+rw .
   chgrp wheel -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
   chmod g+s .
   chmod o= -R $(ls | awk '{if($1 != "node_modules"){ print $1 }}')
