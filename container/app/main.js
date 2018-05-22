@@ -102,22 +102,6 @@ function routeCommands() {
     });
 }
 
-function routeCaptivePortal() {
-    
-    serv.get("/hotspot-detect.html", function(req,res) {
-        console.log('generate hotspot detect hit');
-        res.statusCode = 302;
-        res.setHeader("Location", "/welcome.html");
-    });
-
-    serv.get('/generate_204', function(req, res) {
-        console.log('generate 204 hit');
-        res.statusCode = 302;
-        res.setHeader("Location", "/welcome.html");
-        res.end();
-    });
-}
-
 
 //----------------------------------------------------------------------------
 /*
@@ -125,10 +109,9 @@ function routeCaptivePortal() {
 */
 serv = express();
 serv.disable("x-powered-by");
-serv.use(captive);
 serv.use(rewrite);
 serv.use(cors);
-routeCaptivePortal();
+serv.use(captive);
 routeCommands();
 routeDatabase();
 routeStatic();

@@ -85,7 +85,7 @@ ap() {
     reset
     sleep 1
     netctl stop wireless-internet
-    create_ap --hostapd-debug 2 --redirect-to-localhost --daemon --no-virt -n wlan0 "$local_ssid"
+    create_ap --redirect-to-localhost --daemon --no-virt -n wlan0 "$local_ssid"
 }
 
 pollinate() {

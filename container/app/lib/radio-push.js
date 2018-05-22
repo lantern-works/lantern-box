@@ -15,11 +15,10 @@ module.exports = function RadioPush(db) {
         if (!msg) return;
 
         if (utils.isLantern()) {
-            console.log("[radio] push message: " + msg);
             var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
 
             program.stdout.on('data', function (data) {
-              console.log('q result: ' + data.toString());
+                console.log("[radio] push message: " + data.toString());
             });
 
             program.stderr.on('data', function (data) {

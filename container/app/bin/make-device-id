@@ -17,6 +17,4 @@ if [[ $existing_id != "" ]]; then
 else
     echo -e "\nLANTERN_ID: ${id}" >> /opt/lantern/config.yml
     echo "unique id set for lantern: ${id}"
-    sed -i -e 's/'{{device_id}}'/'LANTERN-${id}'/g' /opt/lantern/network/hostapd.conf
-    echo "setting access point name: LANTERN-${id}"
 fi
