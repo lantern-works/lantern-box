@@ -7,7 +7,6 @@ var cors = require("./lib/cors-middleware");
 var rewrite = require("./lib/rewrite-middleware");
 var captive = require("./lib/captive-middleware");
 var utils = require("./lib/utils");
-var RadioPush = require("./lib/radio-push");
 
 var PouchDB, db, serv, port;
 
@@ -111,9 +110,9 @@ serv = express();
 serv.disable("x-powered-by");
 serv.use(rewrite);
 serv.use(cors);
+routeDatabase();
 serv.use(captive);
 routeCommands();
-routeDatabase();
 routeStatic();
 
 console.log("============================");
@@ -129,9 +128,6 @@ serv.listen(port, function() {
         .then(function(response) {
             console.log("[server] database starting doc count: " + response.doc_count);
             console.log("[server] database update sequence: " + response.update_seq);
-            var push = RadioPush(db);
-            push.start();
-
     })
     .catch(function(err) {
         console.log(err);

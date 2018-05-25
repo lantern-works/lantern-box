@@ -106,6 +106,7 @@ if [[ -f /boot/config.txt ]]; then
 else
   # make this a docker entrypoint
   ./service/http & # systemd is not compatible with docker so run service manually
+  ./service/broadcast &
   set_perms
   zsh # drop into our shell for convenience
   trap : TERM INT; sleep infinity & wait # keep machine running

@@ -21,6 +21,24 @@ EOF
 systemctl enable http.service
 
 
+
+# broadcast service    
+echo "installing broadcast service..."
+touch /etc/systemd/system/broadcast.service
+cat <<EOF >"/etc/systemd/system/broadcast.service"
+[Unit]
+Description=Lantern Broadcast Service
+
+[Service]
+ExecStart=/opt/lantern/service/broadcast
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable broadcast.service
+
+
 if [[ -f /boot/config.txt ]]; then
     echo "installing access point service..."
     # ap service
