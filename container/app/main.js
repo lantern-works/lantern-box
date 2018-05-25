@@ -99,6 +99,13 @@ function routeCommands() {
         console.log("[server] latest user interface loaded");
         res.status(201).send("OK");
     });
+
+    serv.get("/up", function(req, res) {
+        console.log("[server] checking for updated user interface");
+        var stdout = execSync(__dirname + "/bin/ui-update");
+        console.log("[server] latest user interface loaded");
+        res.status(201).send("OK");
+    });
 }
 
 
