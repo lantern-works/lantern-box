@@ -14,7 +14,7 @@ module.exports = function Cors(req, res, next) {
     //intercepts OPTIONS method
     if ('OPTIONS' === req.method) {
       //respond with 200
-      res.send(200);
+      res.status(200).send();
     }
     else {
     //move on
