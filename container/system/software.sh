@@ -9,15 +9,17 @@ sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
 
 #install other system requirements
 pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
-    bash-completion \
+    bash-completion tmux\
     nodejs npm python2 python2-pip base-devel \
     create_ap hostapd dnsmasq avahi nss-mdns wpa_supplicant \
     wpa_actiond ifplugd crda unzip
 
-sync
-
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
+
+# set locale so that tmux does not complain
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
 
 pip2 install --upgrade pip
 
