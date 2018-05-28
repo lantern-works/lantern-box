@@ -78,9 +78,6 @@ else
   # stop using unsafe permissions for npm once we're done installing
 fi
 
-# generate a unique device id that persists on disk
-./bin/make-device-id
-
 
 # get latest web app loaded
 ./bin/ui-update
@@ -108,6 +105,7 @@ else
   ./service/http & # systemd is not compatible with docker so run service manually
   ./service/broadcast &
   set_perms
+  su admin
   zsh # drop into our shell for convenience
   trap : TERM INT; sleep infinity & wait # keep machine running
 fi

@@ -48,8 +48,13 @@ module.exports = function Utils() {
     };
 
     self.getLanternID = function() {
-        if (config.hasOwnProperty("LANTERN_ID")) {
-            return config.LANTERN_ID;
+        try {
+            return fs.readFileSync("/sys/class/net/wlan0/address");
+        }
+        catch(e) {
+            // fall-back to ethernet mac address
+            // may be used for docker-based virtual machines
+            return fs.readFileSync("/sys/class/net/eth0/address");
         }
     };
 

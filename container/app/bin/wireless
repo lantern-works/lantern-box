@@ -75,11 +75,7 @@ internet() {
 }
 
 ap() {
-    if [ "${LANTERN_ID}" == "" ]; then
-      echo "please set your device id with init before running access point"
-      exit
-    fi  
-    local_ssid="LANTERN-${LANTERN_ID}"
+    local_ssid="LANTERN"
     echo "configuring access point: ${local_ssid}"
     echo "you will need to reconnect through a shared wireless network..."
     reset

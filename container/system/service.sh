@@ -78,7 +78,9 @@ fi
 
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin
-echo '%wheel ALL=(ALL) ALL' | EDITOR='tee -a' visudo
+echo '%wheel ALL=(ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
+
+
 
 # set zsh as the default shell
 chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin

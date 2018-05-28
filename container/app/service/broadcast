@@ -176,5 +176,5 @@ setTimeout(function() {
 
     console.log("[broadcast] watching changes...");
     setInterval(notifyLanternOnline, ping);
-}, 10000);
+}, 30 * 1000);
 
