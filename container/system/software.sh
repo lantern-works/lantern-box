@@ -12,10 +12,17 @@ pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     bash-completion \
     nodejs npm python2 python2-pip base-devel \
     create_ap avahi nss-mdns wpa_supplicant \
-    wpa_actiond ifplugd crda dialog unzip
+    wpa_actiond ifplugd crda dialog unzip \
+    tmux
 
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
+
+#npm install node-cmd fs sleep  #This fails with errors. Mailed Jonah to figure out how to get modules properly installed in image...
+
+# set locale so that tmux does not complain
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
 
 pip2 install --upgrade pip
 
