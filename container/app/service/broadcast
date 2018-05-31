@@ -1,40 +1,44 @@
 #!/usr/bin/env node
-var utils = require("../lib/utils");
 var path = require("path");
+var fs = require("fs");
 var spawn = require('child_process').spawn;
-
-// custom build of PouchDB to meet our SQLite requirements
-var PouchDB = require('pouchdb-core')
-        .plugin(require('pouchdb-adapter-node-websql'))
-        .plugin(require('pouchdb-adapter-http'));
-
-var db = new PouchDB(utils.getLocalDatabaseURI());
-
+var PouchDB = require("lantern-serve").PouchDB;
 
 
 var ping = 40 * 1000; // every 40s tell other lanterns we exist
 
 //------------------------------------------------------------------------
+
+/**
+* use MAC address to identify device uniquely
+*/
+function getDeviceIdentifier() {
+    try {
+        // default to wlan0 MAC Address
+        return fs.readFileSync("/sys/class/net/wlan0/address");
+    }
+    catch(e) {
+        // fall-back to ethernet MAC Address
+        // may be used for docker-based virtual machines
+        return fs.readFileSync("/sys/class/net/eth0/address");
+    }
+}
+
 /**
 * push change over distributed long-range network
 **/
 function addMessageToQueue(id, msg) {
     if (!msg) return;
 
-    if (utils.isLantern()) {
-        var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
+    var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
 
-        program.stdout.on('data', function (data) {
-            console.log("[broadcast] " + data.toString());
-        });
+    program.stdout.on('data', function (data) {
+        console.log("[broadcast] " + data.toString());
+    });
 
-        program.stderr.on('data', function (data) {
-          console.log('[broadcast] q err: ' + data.toString());
-        });
-    }
-    else {
-        console.log("[broadcast] simulate: " + msg);
-    }
+    program.stderr.on('data', function (data) {
+      console.log('[broadcast] q err: ' + data.toString());
+    });
 }
 
 /**
@@ -69,7 +73,7 @@ function notifyDocumentRemove(id) {
 **/
 function notifyLanternOnline() {
     setTimeout(function() {
-        var id = utils.getLanternID();
+        var id = getDeviceIdentifier();
         if (!id) {
             console.log("[broadcast] missing lantern id");
         }
@@ -149,15 +153,11 @@ function onChange(change) {
 * start listening for changes
 **/
 
-if (process.env.CLOUD) {
-    console.log("[broadcast] skip push since this is in the cloud...");
-    return;
-}
-
 console.log("[broadcast] about to watch for database changes...");
 
 // give http a head-start to setup...
 setTimeout(function() {
+    var db = new PouchDB("http://localhost/db/lantern/");
     db.changes({
             live: true,
             since: 'now',

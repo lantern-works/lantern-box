@@ -1,8 +1,0 @@
-{
-    "admins": {
-        "admin": "{{db_pass}}"
-    },
-    "httpd": {
-        "bind_address": "0.0.0.0"
-    }
-}

@@ -1,4 +1,9 @@
 #!/bin/bash
-cd /opt/lantern/
+cd /opt/lantern/node_modules/lantern-serve/
 npm start
+
+echo "============================"
+echo "  Lantern HTTP Service"
+echo "============================"
+
 trap : TERM INT; sleep infinity & wait

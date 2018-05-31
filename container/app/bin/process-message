@@ -1,21 +1,14 @@
 #!/usr/bin/env node
-var utils = require("../lib/utils");
-
-var PouchDB = require('pouchdb-core')
-    .plugin(require('pouchdb-adapter-http'))
-    .plugin(require('pouchdb-replication'));
+var PouchDB = require("lantern-serve").PouchDB;
 
 if (process.argv.length != 3) {
     console.log("This program requires one and only one argument to run");
     process.exit();
 }
 
-
-
 //----------------------------------------------------------------------------
 var msg = process.argv[2];
-var uri = utils.getLocalDatabaseURI();
-var db = new PouchDB(uri);
+var db = new PouchDB("http://localhost/db/lantern/");
 
 
 function processCreate(doc) {

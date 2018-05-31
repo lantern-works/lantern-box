@@ -6,14 +6,6 @@ if [[ $UID != 0 ]]; then
     exit 1
 fi
 
-echo "#############################################"
-if [[ -f /boot/config.txt ]]; then
-  echo "## Initialize Raspberry Pi Image"
-else
-  echo "## Initialize Docker Image"
-fi
-echo "#############################################"
-
 
 function parse_yaml {
    local prefix=$2
@@ -51,15 +43,12 @@ function set_perms {
 cd /opt/lantern/
 
 if [[ -f ./config.yml ]]; then
+  echo "#############################################"
+  echo "# Device Config"
+  echo "#############################################"
   eval $(parse_yaml ./config.yml)
+  cat ./config.yml
 fi
-
-# adjust database credentials
-echo "updating pouchdb server config..."
-DB_PASS=${DB_PASS:-wins}
-sed -i -e "s/{{db_pass}}/${DB_PASS}/g" ./db/db-conf.json
-chmod go-rw ./db/db-conf.json
-
 
 # refresh node modules and make sure we have everything needed to run services
 SKIP_NPM=${SKIP_NPM:-false}
@@ -67,44 +56,36 @@ if [[ "${SKIP_NPM}" == "true" ]]; then
   echo "skipping node module installs by request..."
 else
   echo "installing node modules..."
-  # work-around to make sure sqlite3 is available for PouchDB adapter
-  npm config set unsafe-perm true
-  if [ ! -d "./node_modules/sqlite3" ]; then
-      npm install sqlite3@4 --build-from-source
-      npm install https://github.com/lantern-works/node-websql/tarball/master
+  rm -rf node_modules/*
+  if [[ -d ./node_modules/lantern-serve ]]; then
+    echo "node modules already installed..."
+  else
+    npm install lantern-works/lantern-serve --build-from-source=sqlite3   
   fi
-  npm install
-  npm config set unsafe-perm false
-  # stop using unsafe permissions for npm once we're done installing
 fi
 
-
-# get latest web app loaded
-./bin/ui-update
-
-echo "#############################################"
-echo "# Device Config"
-echo "#############################################"
-cat ./config.yml
-
-echo "#############################################"
-echo "# Successfully Completed Build"
-echo "#############################################"
+set_perms
 
 #-----------------------------------------------------------------------------
+
+echo "#############################################"
+if [[ -f /boot/config.txt ]]; then
+  echo "## Raspberry Pi Image Ready"
+else
+  echo "## Docker Image Ready"
+fi
+echo "#############################################"
 
 if [[ -f /boot/config.txt ]]; then
   # finish raspberry pi setup
   echo "updating admin password..."
   ADMIN_PASS=${ADMIN_PASS:-wins}
   echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
-  set_perms
   sync
 else
   # make this a docker entrypoint
   ./service/http & # systemd is not compatible with docker so run service manually
   ./service/broadcast &
-  set_perms
   su admin
   zsh # drop into our shell for convenience
   trap : TERM INT; sleep infinity & wait # keep machine running

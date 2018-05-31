@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+var PouchDB = require('lantern-serve').PouchDB;
+var local_db = PouchDB("http://localhost/lantern");
+var remote_db = PouchDB("http://app.lantern.works");
+
+var sync = local_db.sync(remote_db, { 
+        live: true, 
+        retry: true
+    })
+    .on('change', function (change) {
+        if (change.direction) {
+            console.log("[sync] " + change.direction  + " docs: " + 
+                    change.change.docs_read + " read / " + 
+                    change.change.docs_written + " written"
+                );
+        }
+        else {
+            console.log("[sync] change: ", change);
+        }
+    })
+    .on('error', function (err) {
+        console.log("err: ", err);
+    });
