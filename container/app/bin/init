@@ -64,6 +64,8 @@ else
   fi
 fi
 
+node ./node_modules/lantern-serve/update.js
+
 set_perms
 
 #-----------------------------------------------------------------------------
