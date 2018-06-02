@@ -22,7 +22,6 @@ function processCreate(doc) {
 }
 
 function processUpdate(doc) {
-    console.log("UPDATE TO DOC ", doc);
     db.get(doc._id).then(function(existing_doc) {
         console.log("found document. merging...");
         for (var idx in doc) {
@@ -72,7 +71,7 @@ function processDelete(doc) {
 //----------------------------------------------------------------------------
 var mod = msg[0];
 
-var parts = msg.substr(1).split("::");
+var parts = msg.substr(1).split("?")
 
 // begin constructing doc based on message
 var doc = {
