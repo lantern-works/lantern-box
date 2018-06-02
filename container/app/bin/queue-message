@@ -1,12 +1,12 @@
 #!/usr/bin/env python2
 import sys
-from persistqueue import FIFOSQLiteQueue
-q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
+from persistqueue import UniqueQ
+q = UniqueQ("/tmp/messages")
 
 if (len(sys.argv) > 1):
     sys.argv.pop(0)
     for item in sys.argv:
-        val =  str(item).encode("utf-8")
+        val =  str(item).encode("ascii")
         print("adding: " + val)
         q.put(val)
 else:

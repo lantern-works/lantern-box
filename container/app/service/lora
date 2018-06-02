@@ -8,8 +8,7 @@ import os
 import yaml
 
 from threading import Timer
-from persistqueue import FIFOSQLiteQueue
-
+from persistqueue import UniqueQ
 import rf95
 
 DO_SEND = True
@@ -91,7 +90,7 @@ def checkForOutgoing():
 
         is_running_queue = True
 
-        q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
+        q = UniqueQ("/tmp/messages")
         to_process = len(q)
 
         if to_process > 0:
