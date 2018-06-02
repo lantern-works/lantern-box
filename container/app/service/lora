@@ -17,7 +17,6 @@ DO_RECEIVE = True
 DEFAULT_LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
 LORA_POWER = 20
 SEND_INTERVAL = 3 # how many seconds should we wait between messages
-LORA_MODEM_CONFIG = (0x78, 0xc4, 0x0C)  # slow and long-range with AGC
 
 #-----------------------------------------------------------------------------
 class RepeatedTimer(object):
@@ -67,6 +66,55 @@ def isLoRaBusy():
     current_mode = lora.spi_read(rf95.REG_01_OP_MODE)
     if (current_mode >= 128):
         return True
+
+def setupRadio(): 
+
+    # determine which frequency to broadcast on
+    try:
+        y = yaml.load(open("/opt/lantern/config.yml"))
+        freq = y["FREQUENCY"]
+        printNow("using custom frequency...")
+    except Exception,e:
+        freq = DEFAULT_LORA_FREQUENCY
+
+    lora.set_frequency(freq)
+    printNow("freq = " + str(freq) + " MHz")
+
+    # setup RF95/RF96 modem for our long-range, peer-to-peer data
+    lora.set_tx_power(LORA_POWER)
+
+    bw = rf95.BW_125KHZ
+    cr = rf95.CODING_RATE_4_8
+    ih = rf95.IMPLICIT_HEADER_MODE_OFF
+    sf = rf95.SPREADING_FACTOR_4096CPS
+    crc = rf95.RX_PAYLOAD_CRC_ON
+    ctx = rf95.TX_CONTINUOUS_MODE_OFF
+    to = rf95.SYM_TIMEOUT_MSB
+    agc = rf95.AGC_AUTO_ON
+
+    lora.set_modem_config_custom(
+        bandwidth = bw,
+        coding_rate = cr,
+        imp_header = ih,
+        spreading_factor = sf,
+        crc = crc,
+        continuous_tx = ctx,
+        timeout = to,
+        agc_auto = agc)
+
+
+    # AGC + optimization to prevent misreading characters
+    lora.spi_write(rf95.REG_26_MODEM_CONFIG3, 0x0C)
+
+    printNow("bandwidth = " + str(bw))
+    printNow("spreading factor = " + str(sf))
+    printNow("coding_rate = " + str(cr))
+    printNow("agc_auto = " + str(agc))
+
+    for x in range(0, 5):
+        lora.flash_led(1)
+
+
 
 # for now, some updates will be missed when we're sending out data
 def checkForIncoming():
@@ -160,29 +208,13 @@ def main():
             print("radio not found or not ready. please adjust to CE0 or try later...")
             exitGracefully()
         else:
+            print("radio found...")
+            did_init = True
             # make sure we always exit gracefully when running as a service
             signal.signal(signal.SIGINT, handleStopSignals)
             signal.signal(signal.SIGTERM, handleStopSignals)
-            did_init = True
-
-
-            # determine which frequency to broadcast on
-            try:
-                y = yaml.load(open("/opt/lantern/config.yml"))
-                freq = y["FREQUENCY"]
-            except Exception,e:
-                printNow("using default frequency...")
-                freq = DEFAULT_LORA_FREQUENCY
-
-            lora.set_frequency(freq)
-            printNow("radio ready @ " + str(freq) + " MHz")
-
-
-            # setup RF95/RF96 modem for our long-range, peer-to-peer data
-            lora.set_tx_power(LORA_POWER)
-            lora.set_modem_config(LORA_MODEM_CONFIG)
-            printNow("waiting for outgoing messages in queue...")
-
+            # setup frequency, bandwidth, etc.
+            setupRadio()
             # use a timed interval to check our queue and send messages
             if DO_SEND:
                 rt = RepeatedTimer(7, checkForOutgoing)
