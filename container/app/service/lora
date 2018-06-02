@@ -51,6 +51,7 @@ lora = rf95.RF95(0, 25, None, 13)
 did_init = False
 is_running_queue = False
 
+is_closing = False
 inbox = UniqueQ("/opt/lantern/inbox")
 logging.basicConfig(filename="/opt/lantern/logs/lora.log", level=logging.DEBUG)
 
@@ -64,13 +65,13 @@ def printNow(str):
 def isLoRaBusy():
     lora.spi.open(0,lora.cs)
     current_mode = lora.spi_read(rf95.REG_01_OP_MODE)
-    if (current_mode == 128 or current_mode == 129):
+    if (current_mode >= 128):
         return True
 
 # for now, some updates will be missed when we're sending out data
 def checkForIncoming():
     # Wait until data is available 
-    while is_running_queue or not lora.available():
+    while is_running_queue or not lora.available() or is_closing:
         pass
     # Receive
     payload_size = lora.buflen
@@ -120,26 +121,35 @@ def checkForOutgoing():
         is_running_queue = False
 
 
-def exitGracefully():
-    printNow("exiting gracefully...")
-    lora.set_mode_idle()
-    time.sleep(1)
-    lora.cleanup()
-    time.sleep(1)
-    sys.exit()
 
 
 
 #-----------------------------------------------------------------------------
 def main():
 
-    print("============================")
-    print("  Lantern LoRa Service")
     printNow("============================")
-    
-    def handleStopSignals(signum, frame):
-        if rt:
+    printNow("  Lantern LoRa Service")
+    printNow("============================")
+
+    def exitGracefully():
+        printNow("\nexiting gracefully...")
+        is_closing = True
+        if 'rt' in locals() and rt.is_running:
             rt.stop()
+            printNow("halting send activity...")
+        else:
+            printNow("no send activity to halt...")
+            
+        lora.set_mode_idle()
+        printNow("set lora to idle...")
+        time.sleep(1)
+        lora.led_off()
+        printNow("running cleanup...")
+        lora.cleanup()
+        sys.exit()
+
+
+    def handleStopSignals(signum, frame):
         exitGracefully()
     
     try:
