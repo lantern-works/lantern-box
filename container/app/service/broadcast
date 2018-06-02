@@ -5,7 +5,8 @@ var spawn = require('child_process').spawn;
 var PouchDB = require("lantern-serve").PouchDB;
 
 
-var ping = 40 * 1000; // every 40s tell other lanterns we exist
+var ping_interval = 60 * 1000; // every 1m tell other lanterns we exist
+var start_delay = ping_interval;
 
 //------------------------------------------------------------------------
 
@@ -13,15 +14,17 @@ var ping = 40 * 1000; // every 40s tell other lanterns we exist
 * use MAC address to identify device uniquely
 */
 function getDeviceIdentifier() {
+    var address;
     try {
         // default to wlan0 MAC Address
-        return fs.readFileSync("/sys/class/net/wlan0/address");
+        address = fs.readFileSync("/sys/class/net/wlan0/address");
     }
     catch(e) {
         // fall-back to ethernet MAC Address
         // may be used for docker-based virtual machines
-        return fs.readFileSync("/sys/class/net/eth0/address");
+        address = fs.readFileSync("/sys/class/net/eth0/address");
     }
+    return  String(address).trim().replace(/:/g, "_");
 }
 
 /**
@@ -161,6 +164,7 @@ setTimeout(function() {
     db.changes({
             live: true,
             since: 'now',
+            retry: true,
             include_docs: true
         })
         .on('active', function() {
@@ -175,6 +179,6 @@ setTimeout(function() {
         });
 
     console.log("[broadcast] watching changes...");
-    setInterval(notifyLanternOnline, ping);
-}, 30 * 1000);
+    setInterval(notifyLanternOnline, ping_interval);
+}, start_delay);
 
