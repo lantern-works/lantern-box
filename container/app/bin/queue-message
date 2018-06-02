@@ -1,13 +1,13 @@
 #!/usr/bin/env python2
 import sys
 from persistqueue import UniqueQ
-q = UniqueQ("/tmp/messages")
+outbox = UniqueQ("/opt/lantern/outbox")
 
 if (len(sys.argv) > 1):
     sys.argv.pop(0)
     for item in sys.argv:
         val =  str(item).encode("ascii")
-        print("adding: " + val)
-        q.put(val)
+        print("adding to outbox: " + val)
+        outbox.put(val)
 else:
-    print("no message to queue...")
+    print("no message to queue for outbox...")

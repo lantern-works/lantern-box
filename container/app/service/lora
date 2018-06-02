@@ -89,17 +89,17 @@ def checkForOutgoing():
 
         is_running_queue = True
 
-        q = UniqueQ("/tmp/messages")
-        to_process = len(q)
+        outbox = UniqueQ("/opt/lantern/outbox")
+        to_process = len(outbox)
 
-        if to_process > 0:
-            printNow("queue to process:" + str(to_process))
+        if to_process > 1:
+            printNow("queue to process:" + str(to_process) + "\n\n")
             
         while to_process > 0:
-            item = q.get()
             if len(item):
                 print("-----------------")
                 printNow("sending: "   + item)
+            item = outbox.get()
                 lora.send(lora.str_to_data(item))
                 lora.wait_packet_sent()
                 payload_size = len(item.encode("utf8"))
@@ -109,9 +109,9 @@ def checkForOutgoing():
                 printNow("skipping empty message")
             to_process -= 1
             if to_process > 0:
-                printNow("remaining in queue: " + str(len(q)))
+                printNow("remaining in queue: " + str(len(outbox)))
             time.sleep(SEND_INTERVAL)
-            q.task_done()
+            outbox.task_done()
 
 
         is_running_queue = False
