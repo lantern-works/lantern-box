@@ -42,6 +42,9 @@ function set_perms {
 # enter into app directory and read config file if available
 cd /opt/lantern/
 
+# make log directory
+mkdir -p ./logs
+
 if [[ -f ./config.yml ]]; then
   echo "#############################################"
   echo "# Device Config"

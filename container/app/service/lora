@@ -4,6 +4,7 @@ import sys
 import string
 import time
 import signal
+import logging
 import os
 import yaml
 
@@ -51,11 +52,13 @@ did_init = False
 is_running_queue = False
 
 inbox = UniqueQ("/opt/lantern/inbox")
+logging.basicConfig(filename="/opt/lantern/logs/lora.log", level=logging.DEBUG)
 
 
 #-----------------------------------------------------------------------------
 def printNow(str):
     print(str)
+    logging.info(str)
     sys.stdout.flush()
 
 def isLoRaBusy():
