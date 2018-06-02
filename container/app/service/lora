@@ -7,7 +7,6 @@ import signal
 import logging
 import os
 import yaml
-
 from threading import Timer
 from persistqueue import UniqueQ
 import rf95
@@ -16,7 +15,7 @@ DO_SEND = True
 DO_RECEIVE = True
 DEFAULT_LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
 LORA_POWER = 20
-SEND_INTERVAL = 3 # how many seconds should we wait between messages
+SEND_INTERVAL = 15 # how many seconds should we wait between messages
 
 #-----------------------------------------------------------------------------
 class RepeatedTimer(object):
@@ -49,7 +48,7 @@ class RepeatedTimer(object):
 lora = rf95.RF95(0, 25, None, 13)
 did_init = False
 is_running_queue = False
-
+is_receiving_message = False
 is_closing = False
 inbox = UniqueQ("/opt/lantern/inbox")
 logging.basicConfig(filename="/opt/lantern/logs/lora.log", level=logging.DEBUG)
@@ -121,23 +120,31 @@ def checkForIncoming():
     # Wait until data is available 
     while is_running_queue or not lora.available() or is_closing:
         pass
-    # Receive
+    
+    # Message available, let's read it...
+    is_receiving_message = True
     payload_size = lora.buflen
     data = lora.recv()
-    print("-----------------")
-    print("receiving:")
+
+    printNow("--------------------------------------------------")
     final_str = ""
     for i in data:
-        print(chr(i), end="")
         final_str += chr(i)
-    print("\nbytes received: " + str(payload_size))
-    printNow("-----------------")
     inbox.put(final_str)
+    printNow("RECV " + str(final_str) + " (" + str(payload_size) +")")
+    printNow(": rssi = " + str(lora.last_rssi))
+    printNow(": good rx = " + str(lora.rx_good))
+    printNow(": bad rx = " + str(lora.rx_bad))
+    printNow("--------------------------------------------------") 
+    is_receiving_message = False
+    for x in range(0, 5):
+        lora.flash_led(0.5)
+
 
 def checkForOutgoing():
     global is_running_queue
     # skip timer runs if we're still processing a queue
-    if not is_running_queue:
+    if not is_running_queue and not is_receiving_message:
 
         is_running_queue = True
 
@@ -148,20 +155,20 @@ def checkForOutgoing():
             printNow("queue to process:" + str(to_process) + "\n\n")
             
         while to_process > 0:
-            if len(item):
-                print("-----------------")
-                printNow("sending: "   + item)
             item = outbox.get()
+            if len(item):    
+                printNow("--------------------------------------------------")
                 lora.send(lora.str_to_data(item))
+                printNow("SEND "   + item + " (" + str(len(item)) + ")")
                 lora.wait_packet_sent()
-                payload_size = len(item.encode("utf8"))
-                print("bytes sent: " + str(payload_size))
-                printNow("-----------------")
+                printNow(": good tx = " + str(lora.tx_good))
+                printNow("--------------------------------------------------")
             else:
                 printNow("skipping empty message")
             to_process -= 1
             if to_process > 0:
                 printNow("remaining in queue: " + str(len(outbox)))
+            lora.flash_led(3)
             time.sleep(SEND_INTERVAL)
             outbox.task_done()
 
@@ -205,7 +212,7 @@ def main():
             printNow("radio in use elsewhere...")
             quit(1)
         elif not lora.init(): # returns True if found
-            print("radio not found or not ready. please adjust to CE0 or try later...")
+            printNow("radio not found or not ready. please adjust hardware switch to CE0 or try later...")
             exitGracefully()
         else:
             print("radio found...")
@@ -217,14 +224,17 @@ def main():
             setupRadio()
             # use a timed interval to check our queue and send messages
             if DO_SEND:
-                rt = RepeatedTimer(7, checkForOutgoing)
+                rt = RepeatedTimer(SEND_INTERVAL, checkForOutgoing)
                 rt.start()
+                printNow("ready to send messages...")
 
             if DO_RECEIVE:
                 # when we're not sending messags, drop into receiving mode
-                printNow("watching airwaves for incoming messages...")
+                printNow("watching airwaves...")
                 while True:
                     checkForIncoming()
+
+
 
     except KeyboardInterrupt:
         exitGracefully()
