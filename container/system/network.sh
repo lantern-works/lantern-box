@@ -12,9 +12,6 @@ if [[ -f /boot/config.txt ]]; then
 
     # enable wireless, actual connection details will be configured by the user, likely over usb-serial.
     ln -sf /usr/lib/systemd/system/netctl-auto@.service /etc/systemd/system/multi-user.target.wants/netctl-auto@wlan0.service
-
-    # ip forwarding
-    cat "net.ipv4.ip_forward = 1" >> /etc/sysctl.d/ipv4_forwarding.conf
 else
     echo "skipping network setup within docker container..."    
 fi

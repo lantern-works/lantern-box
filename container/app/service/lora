@@ -50,6 +50,7 @@ lora = rf95.RF95(0, 25, None, 13)
 did_init = False
 is_running_queue = False
 
+inbox = UniqueQ("/opt/lantern/inbox")
 
 
 #-----------------------------------------------------------------------------
@@ -79,9 +80,7 @@ def checkForIncoming():
         final_str += chr(i)
     print("\nbytes received: " + str(payload_size))
     printNow("-----------------")
-    cmd = "/opt/lantern/bin/process-message " + final_str
-    run = os.system(cmd)
-    print(run)
+    inbox.put(final_str)
 
 def checkForOutgoing():
     global is_running_queue
