@@ -5,8 +5,7 @@ var spawn = require('child_process').spawn;
 var PouchDB = require("lantern-serve").PouchDB;
 
 
-var ping_interval = 45 * 1000; // every 45s+random tell other lanterns we exist
-var start_delay = ping_interval;
+var ping_interval = 30 * 1000; // every 30s+random tell other lanterns we exist
 
 //------------------------------------------------------------------------
 
@@ -83,7 +82,7 @@ function notifyLanternOnline() {
         else {
             addMessageToQueue(id, "^d:"+ id + "?st=1");
         }
-    }, 15000*Math.random());
+    }, 10000*Math.random());
 }
 
 /**
@@ -158,27 +157,26 @@ function onChange(change) {
 
 console.log("[broadcast] about to watch for database changes...");
 
-// give http a head-start to setup...
-setTimeout(function() {
-    var db = new PouchDB("http://localhost/db/lantern/");
-    db.changes({
-            live: true,
-            since: 'now',
-            retry: true,
-            include_docs: true
-        })
-        .on('active', function() {
-            console.log("[broadcast] active change feed");
-        })
-        .on('paused', function() {
-            console.log("[broadcast] paused change feed");
-        })
-        .on('change', onChange)
-        .on('error', function (err) {
-            console.log(err);
-        });
 
-    console.log("[broadcast] watching changes...");
-    setInterval(notifyLanternOnline, ping_interval);
-}, start_delay);
+var db = new PouchDB("http://localhost/db/lantern/");
+db.changes({
+        live: true,
+        since: 'now',
+        retry: true,
+        include_docs: true
+    })
+    .on('active', function() {
+        console.log("[broadcast] active change feed");
+    })
+    .on('paused', function() {
+        console.log("[broadcast] paused change feed");
+    })
+    .on('change', onChange)
+    .on('error', function (err) {
+        console.log(err);
+    });
+
+console.log("[broadcast] watching changes...");
+setInterval(notifyLanternOnline, ping_interval);
+
 

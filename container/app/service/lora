@@ -13,8 +13,8 @@ import rf95
 
 DO_SEND = True
 DO_RECEIVE = True
-DEFAULT_LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
-LORA_POWER = 20
+DEFAULT_LORA_FREQUENCY = rf95.CH_05_US
+LORA_POWER = 23
 SEND_INTERVAL = 15 # how many seconds should we wait between messages
 
 #-----------------------------------------------------------------------------
@@ -66,6 +66,7 @@ def isLoRaBusy():
     if (current_mode == 128 or current_mode == 129):
         return True
 
+# setup RF95/RF96 modem for our long-range, peer-to-peer data
 def setupRadio(): 
 
     # determine which frequency to broadcast on
@@ -79,38 +80,41 @@ def setupRadio():
     lora.set_frequency(freq)
     printNow("freq = " + str(freq) + " MHz")
 
-    # setup RF95/RF96 modem for our long-range, peer-to-peer data
+    # set power levels
     lora.set_tx_power(LORA_POWER)
+    printNow("power level = " + str(LORA_POWER))
 
-    bw = rf95.BW_125KHZ # bandwidth
-    cr = rf95.CODING_RATE_4_8 # coding rate
-    ih = rf95.IMPLICIT_HEADER_MODE_OFF #implicit headers
-    sf = rf95.SPREADING_FACTOR_4096CPS # spreading factor
-    crc = rf95.RX_PAYLOAD_CRC_ON # crc
-    ctx = rf95.TX_CONTINUOUS_MODE_OFF #continuous transmission
-    to = rf95.SYM_TIMEOUT_MSB # timeout
-    agc = rf95.AGC_AUTO_ON # agc auto
+    # set custom modem config
+    bandwidth = rf95.BW_62K5HZ
+    coding_rate = rf95.CODING_RATE_4_8
+    imp_header = rf95.IMPLICIT_HEADER_MODE_ON
+    spreading_factor = rf95.SPREADING_FACTOR_2048CPS
+    crc = rf95.RX_PAYLOAD_CRC_ON
+    continuous_tx = rf95.TX_CONTINUOUS_MODE_OFF
+    timeout = rf95.SYM_TIMEOUT_MSB
+    agc_auto = rf95.AGC_AUTO_ON
 
-    lora.set_modem_config_custom(
-        bandwidth = bw,
-        coding_rate = cr,
-        imp_header = ih,
-        spreading_factor = sf,
-        crc = crc,
-        continuous_tx = ctx,
-        timeout = to,
-        agc_auto = agc)
+    #  Low Data Rate Optimisation mandated for when the symbol length exceeds 16ms
+    low_data_rate = 0x08 # aka mobile node
 
 
-    # AGC + optimization to prevent misreading characters
-    lora.spi_write(rf95.REG_26_MODEM_CONFIG3, 0x0C)
+    lora.spi_write(rf95.REG_1D_MODEM_CONFIG1, \
+            bandwidth | coding_rate | imp_header)
 
-    printNow("bandwidth = " + str(bw))
-    printNow("spreading factor = " + str(sf))
-    printNow("coding_rate = " + str(cr))
-    printNow("agc_auto = " + str(agc))
+    lora.spi_write(rf95.REG_1E_MODEM_CONFIG2, \
+            spreading_factor | continuous_tx | crc | timeout)
+
+    # low data rate optimize prevents distortion of characters
+    lora.spi_write(rf95.REG_26_MODEM_CONFIG3, \
+            agc_auto | low_data_rate)
+
+    printNow("bandwidth = " + str(bandwidth))
+    printNow("spreading factor = " + str(spreading_factor))
+    printNow("coding_rate = " + str(coding_rate))
+    printNow("agc_auto = " + str(agc_auto))
     printNow("current mode = " + str(lora.spi_read(rf95.REG_01_OP_MODE)))
 
+    # announce that modem is ready with lighting effects
     for x in range(0, 5):
         lora.flash_led(1)
 
@@ -136,11 +140,13 @@ def checkForIncoming():
         final_str += chr(i)
     inbox.put(final_str)
     lora.flash_led(0.3)
+    preamble_len = lora.spi_read(rf95.REG_21_PREAMBLE_LSB)
     printNow("--------------------------------------------------")
     printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
-    printNow(" |- rssi = " + str(lora.last_rssi))
+    printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
     printNow(" |- rx_good = " + str(lora.rx_good))
     printNow(" |- rx_bad = " + str(lora.rx_bad))
+    printNow(" |- preamble_len = " + str(preamble_len))
     printNow("==================================================")
     is_receiving_message = False
     for x in range(0, 4):
@@ -150,6 +156,10 @@ def checkForIncoming():
 def checkForOutgoing():
     global is_running_queue
     global is_receiving_message
+
+    if lora.rx_bad > 0:
+        printNow("bad tx count: " + str(lora.rx_bad))
+
     # skip timer runs if we're still processing a queue
     if is_running_queue:
         printNow("waiting for outbox to process...")
@@ -173,11 +183,15 @@ def checkForOutgoing():
                     # long-term we will ignore these messages if they come back
                     # with the same count as a "unique id"
                     item = str(lora.tx_good) + "::" + item
+                    power = lora.spi_read(rf95.REG_09_PA_CONFIG)
+                    lna = lora.spi_read(rf95.REG_0C_LNA)
                     lora.send(lora.str_to_data(item))
                     printNow("--------------------------------------------------")
                     printNow("SND "   + item + " (" + str(len(item)) + ")")
                     lora.wait_packet_sent()
                     printNow(" |- tx_good = " + str(lora.tx_good))
+                    printNow(" |- reg_pa_config = " + str(power))
+                    printNow(" |- reg_lna = " + str(lna))
                     time.sleep(1)
                 else:
                     printNow("skipping empty message")
