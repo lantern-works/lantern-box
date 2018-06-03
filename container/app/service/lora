@@ -156,10 +156,6 @@ def checkForOutgoing():
             
         while to_process > 0:
             item = outbox.get()
-            if len(item):    
-                printNow("--------------------------------------------------")
-                lora.send(lora.str_to_data(item))
-                printNow("SEND "   + item + " (" + str(len(item)) + ")")
                 lora.wait_packet_sent()
                 printNow(": good tx = " + str(lora.tx_good))
                 printNow("--------------------------------------------------")
@@ -173,6 +169,15 @@ def checkForOutgoing():
             outbox.task_done()
 
 
+                if len(item):    
+                    # append count to help track duplicates 
+                    # and forward to other devices over LoRa
+                    # long-term we will ignore these messages if they come back
+                    # with the same count as a "unique id"
+                    item = str(lora.tx_good) + "::" + item
+                    lora.send(lora.str_to_data(item))
+                    printNow("--------------------------------------------------")
+                    printNow("SND "   + item + " (" + str(len(item)) + ")")
         is_running_queue = False
 
 

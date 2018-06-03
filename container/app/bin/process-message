@@ -7,7 +7,7 @@ if (process.argv.length != 3) {
 }
 
 //----------------------------------------------------------------------------
-var msg = process.argv[2];
+var input_str = process.argv[2];
 var db = new PouchDB("http://localhost/db/lantern/");
 
 
@@ -69,9 +69,13 @@ function processDelete(doc) {
 
 
 //----------------------------------------------------------------------------
-var mod = msg[0];
 
-var parts = msg.substr(1).split("?")
+var id = input_str.split("::")[0];
+var msg = input_str.split("::")[1]; 
+var mod = msg[0];
+var parts = msg.substr(1).split("?");
+
+console.log("message id = " + id);
 
 // begin constructing doc based on message
 var doc = {
