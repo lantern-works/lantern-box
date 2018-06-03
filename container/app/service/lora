@@ -63,7 +63,7 @@ def printNow(str):
 def isLoRaBusy():
     lora.spi.open(0,lora.cs)
     current_mode = lora.spi_read(rf95.REG_01_OP_MODE)
-    if (current_mode >= 128):
+    if (current_mode == 128 or current_mode == 129):
         return True
 
 def setupRadio(): 
@@ -82,14 +82,14 @@ def setupRadio():
     # setup RF95/RF96 modem for our long-range, peer-to-peer data
     lora.set_tx_power(LORA_POWER)
 
-    bw = rf95.BW_125KHZ
-    cr = rf95.CODING_RATE_4_8
-    ih = rf95.IMPLICIT_HEADER_MODE_OFF
-    sf = rf95.SPREADING_FACTOR_4096CPS
-    crc = rf95.RX_PAYLOAD_CRC_ON
-    ctx = rf95.TX_CONTINUOUS_MODE_OFF
-    to = rf95.SYM_TIMEOUT_MSB
-    agc = rf95.AGC_AUTO_ON
+    bw = rf95.BW_125KHZ # bandwidth
+    cr = rf95.CODING_RATE_4_8 # coding rate
+    ih = rf95.IMPLICIT_HEADER_MODE_OFF #implicit headers
+    sf = rf95.SPREADING_FACTOR_4096CPS # spreading factor
+    crc = rf95.RX_PAYLOAD_CRC_ON # crc
+    ctx = rf95.TX_CONTINUOUS_MODE_OFF #continuous transmission
+    to = rf95.SYM_TIMEOUT_MSB # timeout
+    agc = rf95.AGC_AUTO_ON # agc auto
 
     lora.set_modem_config_custom(
         bandwidth = bw,
@@ -109,6 +109,7 @@ def setupRadio():
     printNow("spreading factor = " + str(sf))
     printNow("coding_rate = " + str(cr))
     printNow("agc_auto = " + str(agc))
+    printNow("current mode = " + str(lora.spi_read(rf95.REG_01_OP_MODE)))
 
     for x in range(0, 5):
         lora.flash_led(1)
@@ -117,58 +118,55 @@ def setupRadio():
 
 # for now, some updates will be missed when we're sending out data
 def checkForIncoming():
-    # Wait until data is available 
+    global is_running_queue
+    global is_closing
+    global is_receiving_message
+
+    # Wait until data is available
     while is_running_queue or not lora.available() or is_closing:
         pass
     
     # Message available, let's read it...
     is_receiving_message = True
+    lora.flash_led(0.3)
     payload_size = lora.buflen
     data = lora.recv()
-
-    printNow("--------------------------------------------------")
     final_str = ""
     for i in data:
         final_str += chr(i)
     inbox.put(final_str)
-    printNow("RECV " + str(final_str) + " (" + str(payload_size) +")")
-    printNow(": rssi = " + str(lora.last_rssi))
-    printNow(": good rx = " + str(lora.rx_good))
-    printNow(": bad rx = " + str(lora.rx_bad))
-    printNow("--------------------------------------------------") 
+    lora.flash_led(0.3)
+    printNow("--------------------------------------------------")
+    printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
+    printNow(" |- rssi = " + str(lora.last_rssi))
+    printNow(" |- rx_good = " + str(lora.rx_good))
+    printNow(" |- rx_bad = " + str(lora.rx_bad))
+    printNow("==================================================")
     is_receiving_message = False
-    for x in range(0, 5):
-        lora.flash_led(0.5)
+    for x in range(0, 4):
+        lora.flash_led(0.3)
 
 
 def checkForOutgoing():
     global is_running_queue
+    global is_receiving_message
     # skip timer runs if we're still processing a queue
-    if not is_running_queue and not is_receiving_message:
-
+    if is_running_queue:
+        printNow("waiting for outbox to process...")
+    elif is_receiving_message:
+        printNow("waiting for inbox to process...")
+    else:
         is_running_queue = True
-
         outbox = UniqueQ("/opt/lantern/outbox")
         to_process = len(outbox)
-
-        if to_process > 1:
-            printNow("queue to process:" + str(to_process) + "\n\n")
+        lora.led_on()
+        if to_process > 0:
             
-        while to_process > 0:
-            item = outbox.get()
-                lora.wait_packet_sent()
-                printNow(": good tx = " + str(lora.tx_good))
-                printNow("--------------------------------------------------")
-            else:
-                printNow("skipping empty message")
-            to_process -= 1
-            if to_process > 0:
-                printNow("remaining in queue: " + str(len(outbox)))
-            lora.flash_led(3)
-            time.sleep(SEND_INTERVAL)
-            outbox.task_done()
-
-
+            if to_process > 1:
+                printNow("queue to process:" + str(to_process) + "\n\n")
+            
+            while to_process > 0:
+                item = outbox.get()
                 if len(item):    
                     # append count to help track duplicates 
                     # and forward to other devices over LoRa
@@ -178,9 +176,21 @@ def checkForOutgoing():
                     lora.send(lora.str_to_data(item))
                     printNow("--------------------------------------------------")
                     printNow("SND "   + item + " (" + str(len(item)) + ")")
+                    lora.wait_packet_sent()
+                    printNow(" |- tx_good = " + str(lora.tx_good))
+                    time.sleep(1)
+                else:
+                    printNow("skipping empty message")
+                to_process -= 1
+                if to_process > 0:
+                    printNow("remaining in queue: " + str(len(outbox)))
+                lora.led_off()
+                if to_process > 0:
+                    time.sleep(SEND_INTERVAL)
+                outbox.task_done()
+            printNow("==================================================")
+        lora.led_off()
         is_running_queue = False
-
-
 
 
 

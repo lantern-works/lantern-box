@@ -5,7 +5,7 @@ var spawn = require('child_process').spawn;
 var PouchDB = require("lantern-serve").PouchDB;
 
 
-var ping_interval = 60 * 1000; // every 1m tell other lanterns we exist
+var ping_interval = 45 * 1000; // every 45s+random tell other lanterns we exist
 var start_delay = ping_interval;
 
 //------------------------------------------------------------------------
@@ -83,7 +83,7 @@ function notifyLanternOnline() {
         else {
             addMessageToQueue(id, "^d:"+ id + "?st=1");
         }
-    }, 10000*Math.random());
+    }, 15000*Math.random());
 }
 
 /**
