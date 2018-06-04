@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import sys
 import logging
+import os
 from persistqueue import UniqueQ
 inbox = UniqueQ("/opt/lantern/inbox")
 
@@ -21,6 +22,6 @@ if to_process > 1:
 while to_process > 0:
     item = inbox.get()
     printNow(item)
-    cmd = "/opt/lantern/bin/process-message " + item
+    cmd = '/opt/lantern/bin/process-message "' + item + '"'
     run = os.system(cmd)
     printNow(run)

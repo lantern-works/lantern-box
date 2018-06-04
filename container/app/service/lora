@@ -182,7 +182,7 @@ def checkForOutgoing():
                     # and forward to other devices over LoRa
                     # long-term we will ignore these messages if they come back
                     # with the same count as a "unique id"
-                    item = str(lora.tx_good) + "::" + item
+                    item = str(lora.tx_good) + "^" + item
                     power = lora.spi_read(rf95.REG_09_PA_CONFIG)
                     lna = lora.spi_read(rf95.REG_0C_LNA)
                     lora.send(lora.str_to_data(item))

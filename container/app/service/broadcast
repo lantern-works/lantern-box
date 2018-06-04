@@ -5,7 +5,7 @@ var spawn = require('child_process').spawn;
 var PouchDB = require("lantern-serve").PouchDB;
 
 
-var ping_interval = 30 * 1000; // every 30s+random tell other lanterns we exist
+var ping_interval = 15 * 1000; // every 30s+random tell other lanterns we exist
 
 //------------------------------------------------------------------------
 
@@ -23,13 +23,14 @@ function getDeviceIdentifier() {
         // may be used for docker-based virtual machines
         address = fs.readFileSync("/sys/class/net/eth0/address");
     }
-    return  String(address).trim().replace(/:/g, "_");
+    var id = String(address).trim().split(":");
+    return id[0] + id[id.length-1];
 }
 
 /**
 * push change over distributed long-range network
 **/
-function addMessageToQueue(id, msg) {
+function addMessageToQueue(msg) {
     if (!msg) return;
 
     var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
@@ -49,7 +50,7 @@ function addMessageToQueue(id, msg) {
 function notifyDocumentUpdate(doc) {
     var msg = buildParameters(doc);
     if (msg.length) {
-        addMessageToQueue(doc._id, "^"+doc._id + "::" + msg);
+        addMessageToQueue(doc._id + "?" + msg);
     }
 }
 
@@ -59,30 +60,32 @@ function notifyDocumentUpdate(doc) {
 **/
 function notifyDocumentCreate(doc) {
     var msg = buildParameters(doc);
-    addMessageToQueue(doc._id, "+"+doc._id + "::" + msg);
+    addMessageToQueue(doc._id + "?" + msg);
 }
 
 
 /**
 * let other lanterns know about a removed document
 **/
-function notifyDocumentRemove(id) {
-    addMessageToQueue(id, "-"+id);
+function notifyDocumentRemove(doc_id) {
+    addMessageToQueue(doc_id);
 }
 
 /**
-* let other lanterns know this device is online
+* sometimes let other lanterns know this device is online
 **/
 function notifyLanternOnline() {
-    setTimeout(function() {
-        var id = getDeviceIdentifier();
-        if (!id) {
-            console.log("[broadcast] missing lantern id");
-        }
-        else {
-            addMessageToQueue(id, "^d:"+ id + "?st=1");
-        }
-    }, 10000*Math.random());
+    if (Math.random() > 0.3) {
+        setTimeout(function() {
+            var id = getDeviceIdentifier();
+            if (!id) {
+                console.log("[broadcast] missing lantern id");
+            }
+            else {
+                addMessageToQueue("d:"+ id + "?st=1");
+            }
+        }, 15000*Math.random());
+    }
 }
 
 /**
