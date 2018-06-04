@@ -132,21 +132,20 @@ def checkForIncoming():
     
     # Message available, let's read it...
     is_receiving_message = True
-    lora.flash_led(0.3)
+    lora.led_on()
     payload_size = lora.buflen
     data = lora.recv()
     final_str = ""
     for i in data:
         final_str += chr(i)
     inbox.put(final_str)
-    lora.flash_led(0.3)
-    preamble_len = lora.spi_read(rf95.REG_21_PREAMBLE_LSB)
+    snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
+
     printNow("--------------------------------------------------")
     printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
     printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
-    printNow(" |- rx_good = " + str(lora.rx_good))
-    printNow(" |- rx_bad = " + str(lora.rx_bad))
-    printNow(" |- preamble_len = " + str(preamble_len))
+    printNow(" |- snr = " + str(snr)) #signal-noise-ratio
+    printNow(" |- rx_good = " + str(lora.rx_good)) # successful receipts
     printNow("==================================================")
     is_receiving_message = False
     for x in range(0, 4):
@@ -156,12 +155,15 @@ def checkForIncoming():
 def checkForOutgoing():
     global is_running_queue
     global is_receiving_message
+    global is_closing
 
     if lora.rx_bad > 0:
         printNow("bad tx count: " + str(lora.rx_bad))
 
+    if is_closing:
+        pass
     # skip timer runs if we're still processing a queue
-    if is_running_queue:
+    elif is_running_queue:
         printNow("waiting for outbox to process...")
     elif is_receiving_message:
         printNow("waiting for inbox to process...")
@@ -169,7 +171,6 @@ def checkForOutgoing():
         is_running_queue = True
         outbox = UniqueQ("/opt/lantern/outbox")
         to_process = len(outbox)
-        lora.led_on()
         if to_process > 0:
             
             if to_process > 1:
@@ -177,7 +178,9 @@ def checkForOutgoing():
             
             while to_process > 0:
                 item = outbox.get()
-                if len(item):    
+                if len(item):
+                    lora.led_on()
+                    time.sleep(2)
                     # append count to help track duplicates 
                     # and forward to other devices over LoRa
                     # long-term we will ignore these messages if they come back
@@ -192,7 +195,6 @@ def checkForOutgoing():
                     printNow(" |- tx_good = " + str(lora.tx_good))
                     printNow(" |- reg_pa_config = " + str(power))
                     printNow(" |- reg_lna = " + str(lna))
-                    time.sleep(1)
                 else:
                     printNow("skipping empty message")
                 to_process -= 1
