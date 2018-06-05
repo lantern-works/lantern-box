@@ -4,20 +4,48 @@ var cmd 	  = require('node-cmd');
 var fs    	= require('fs');
 var sleep 	= require('sleep');
 
-var LANTERN_SSID="lantern"
-LANTERN_SSID="aamootp" //override with jeff's home AP for testing
-var LANTERN_INTERNET_SSID="lantern-internet"
+var LANTERN_SSID="LANTERN"
+//LANTERN_SSID="aamootp" //override with jeff's home AP for testing
+//LANTERN_SSID="TP-Link_C743" //override with Jeff's home internet in Israel
+var LANTERN_INTERNET_SSID="LANTERN-INTERNET"
 
 //How long should we stay in AP mode before dropping out to pollinate?
-var POLLINATE_MIN_SECONDS=20*2; //should be minutes, but seconds useful for debugging; multiply by 60 later
-var POLLINATE_MAX_SECONDS=30*2;
+var POLLINATE_MIN_SECONDS=10;
+var POLLINATE_MAX_SECONDS=30;
 
-function boot() {
-  console.log('pogonet booting...');
-  lanternModeAP_Internet();
+var curLanternIndex=0; //for iterating through lanterns
+var nearbyLanterns;
+
+var autoPogo = false;
+
+var pogo_reset = `
+  create_ap --stop wlan0
+  sleep 1
+  systemctl stop netctl-auto@wlan0
+  sleep 1
+  ifconfig wlan0 down
+  sleep 1
+  rfkill block wlan
+  sleep 1
+  rfkill unblock wlan
+  sleep 1
+  ifconfig wlan0 up
+  sleep 1
+`
+
+//https://stackoverflow.com/questions/13997793/generate-random-number-between-2-numbers
+function random_int(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function pollinateLantern(ssid, mac) {
+//if user terminates the script, switch back to AP mode and exit
+process.once('SIGINT', function (code) {
+    console.log('SIGINT received...');
+    ap_start(true);
+    process.exit(0);
+  });
+
+function pollinate_lantern(ssid, mac) {
   console.log("pollinateLantern() %s %s", ssid, mac);
   //Create new netctl profile for the target lantern (based on mac address)
   fs.writeFile(
@@ -45,7 +73,7 @@ function pollinateLantern(ssid, mac) {
             console.log("Done with pouchDB sync...time for next lantern");
           }
           //whether error or not, pollinate the next one
-          setTimeout(pollinateNextLantern, 1*1000); //to avoid recursion
+          setTimeout(pollinate_next, 1*1000); //1s delay to avoid recursion
         }
       );
 
@@ -54,51 +82,27 @@ function pollinateLantern(ssid, mac) {
   );
 }
 
-function pollinateNextLantern() {
+function pollinate_next() {
   if(curLanternIndex==nearbyLanterns.length) {
-    //BUGBUG - should go through all lanterns twice...just doing once now.
+    //TODO - should go through all lanterns twice...just doing once now.
     curLanternIndex=0;
-    lanternModeAP();
+    console.log("No other lanterns in range: switching to AP mode.");
+    ap_start(false); //BUGBUG - should not need to be retold if there is internet...
+    if(autoPogo) {
+      pollinate_schedule();
+    }
+    else {
+      console.log("pogo mode = false: no pollinate scheduled.");
+    }
   }
   else {
-    pollinateLantern(LANTERN_SSID, nearbyLanterns[curLanternIndex]);
+    pollinate_lantern(LANTERN_SSID, nearbyLanterns[curLanternIndex]);
     curLanternIndex++;
   }
 }
 
-var curLanternIndex=0;
-var nearbyLanterns;
-function pollinateStart() {
-  //go through list of nearby lanterns, sorted by strongest signal first
-  console.log("pollinateStart()");
-  //process.exit(); //debug: uncomment to manually investigate wlan state at this point
-  var command = 'ifconfig wlan0 up; sleep 5; '+__dirname+'/bin/pogo-macs ' + LANTERN_SSID;
-  //console.log("Finding lanterns with: "+command);
-  cmd.get(
-    command,
-    function(err, data, stderr) {
-      if(err) { //BUGBUG - this is now probably just the return of sleep, which won't fail
-        console.log("ERROR pogo-macs failure: "+err);
-      }
-      else {
-        nearbyLanterns = data.split('\n');
-        nearbyLanterns.pop();  //get rid of final blank line
-        curLanternIndex=0;
-        if(nearbyLanterns.length > 0) {
-          console.log("Found " + nearbyLanterns.length.toString() + " new Lanterns:\n"+nearbyLanterns.toString());
-          pollinateNextLantern();
-        }
-        else {
-          console.log("No other lanterns in range: switching to AP mode.");
-          lanternModeAP();
-        }
-      }
-    }
-  );
-}
-
-function lanternModePollinate() {
-  console.log("Mode switch: Pollinate");
+function pollinate_start() {
+  console.log("pollinate_start");
 
   //first shut down AP mode
   cmd.get(
@@ -108,65 +112,86 @@ function lanternModePollinate() {
         console.log("Error shutting down AP: "+stderr);
       }
       else {
-        pollinateStart();
+        var command = 'ifconfig wlan0 up; sleep 5; '+__dirname+'/pogo-macs ' + LANTERN_SSID;
+        //console.log("Finding lanterns with: "+command);
+        cmd.get(
+          command,
+          function(err, data, stderr) {
+            if(err) { //BUGBUG - this is now probably just the return of sleep, which won't fail
+              console.log("ERROR pogo-macs failure: "+err);
+            }
+            else {
+              nearbyLanterns = data.split('\n');
+              nearbyLanterns.pop();  //get rid of final blank line
+              curLanternIndex=0;
+              if(nearbyLanterns.length > 0) {
+                console.log("Found " + nearbyLanterns.length.toString() + " new Lanterns:\n"+nearbyLanterns.toString());
+              }
+              pollinate_next();
+            }
+          }
+        );
       }
     }
   );
-  console.log("exiting LaternModePollinate");
+  //console.log("exiting LaternModePollinate");
 }
 
-//https://stackoverflow.com/questions/13997793/generate-random-number-between-2-numbers
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function pollinate_schedule() {
+  var interval = random_int(POLLINATE_MIN_SECONDS, POLLINATE_MAX_SECONDS);
+  setTimeout(pollinate_start, (interval*1000));
+  console.log("Pollinate scheduled in " + interval.toString() + " seconds.");
 }
 
-function lanternModeAP() {
-  console.log("Mode switch: AP");
-  var interval = getRandomInt(POLLINATE_MIN_SECONDS, POLLINATE_MAX_SECONDS);
-  setTimeout(lanternModePollinate, (interval*1000));
-  console.log("Seconds remaining until next pollinate: "+interval.toString());
+function ap_start(internet_available) {
+  console.log("Switching to AP mode.");
+
+  var ssid;
+
+  if(internet_available){
+    ssid=LANTERN_INTERNET_SSID;
+  }
+  else {
+    ssid=LANTERN_SSID;
+  }
 
   cmd.get(
-    //jeff - vetted throws errors, but does bring up latern
-    __dirname+'/pogo-ap',
+    //jeff - vetted throws errors, but does bring up lantern
+    //__dirname+'/pogo-ap ' + ssid,
+    pogo_reset + `
+      sleep 1
+      netctl stop-all
+      create_ap --daemon --no-virt -n wlan0 ` + ssid
+    ,
     function(err, data, stderr) {
       if(err) {
-        console.log("lanternModeAP error: "+stderr);
+        console.log("ERROR creating access point, ssid " + ssid + ": " + stderr);
       }
       else {
-        console.log("Switched to AP mode.");
+        console.log("Access point successfully started, ssid: " + ssid);
       }
     }
   );
-}
-
-// tries to connect to internet and remain an AP. If fails, goes to AP-only mode
-function lanternModeAP_Internet() {
-  console.log("internet mode not yet implemented. exiting.");
-  //lanternModeAP(); //BUGBUG: for now, just assume we don't have internet
-  return false;
 }
 
 // process command line arguments and do the caller's bidding
 switch(String(process.argv[2])){
-  case "pogo"      : boot(); break;
-  case "ap"        : lanternModeAP(); break;
-  case "pollinate" : lanternModePollinate(); break;
-  case "internet"  : lanternModeAP_Internet(); break;
+  case "ap"        : ap_start(false);                      break;
+  case "internet"  : ap_start(true);                       break;
+  case "pogo"      : autoPogo=true; pollinate_schedule();  break; //won't begin pollinating immediately, but starts the timer
+  case "pollinate" : pollinate_start();                    break; //starts pollinating immediately
   default:
     console.log("pogonet [ap, pollinate, internet, pogo]\n");
-    console.log("ap: becomes an access point to which phones can connect.");
-    console.log("pollinate: drops out of ap mode and syncs with nearby lanterns, then returns to ap mode.");
-    console.log("internet: connect to configured internet and lock into ap mode, never pollinating (not yet implemented).");
+    console.log("ap: becomes an access point to which phones and lanterns can connect.");
+    console.log("pollinate: drops out of ap mode and syncs with nearby lanterns once, then returns to ap mode.");
+    console.log("internet: locked to ap mode with SSID LANTERN_INTERNET.");
     console.log("pogo: automatically toggles between ap and pollinate, currently on a randomized schedule.");
     break;
 }
 
 /*
-  #netctl-auto disable wlan0-SSID
-  #netctl-auto enable wlan0-SSID
-  netctl-auto list
-  sudo create_ap --no-virt -n wlan0 lanternAP
-  sudo systemctl stop netctl-auto@wlan0
-  sudo ifconfig wlan0 up //if wlan0 disappears from ifconfig
+  TODO:
+  - pollinate: iterate through nearby lanterns twice to make sure all are in sync
+  - pollinate: pick the strongest LANTERN_INTERNET nearby and sync to that first, to get latest before pollinating
+  - internet: automatically check if internet is active, then go into internet mode automatically in ap_start
 */
