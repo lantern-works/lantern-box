@@ -1,6 +1,7 @@
 from stephank/archlinux:armv6-base
 
 EXPOSE 80
+EXPOSE 443
 
 # install setup scripts to prepare system
 RUN mkdir -p /tmp/system
