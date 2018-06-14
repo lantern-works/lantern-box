@@ -112,7 +112,7 @@ function pollinate_start() {
         console.log("Error shutting down AP: "+stderr);
       }
       else {
-        var command = 'ifconfig wlan0 up; sleep 5; '+__dirname+'/pogo-macs ' + LANTERN_SSID;
+        var command = 'ifconfig wlan0 up; sleep 5; '+__dirname+'/wireless macs ' + LANTERN_SSID;
         //console.log("Finding lanterns with: "+command);
         cmd.get(
           command,
