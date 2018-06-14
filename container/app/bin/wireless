@@ -6,9 +6,18 @@ if [[ $UID != 0 ]]; then
     exit 1
 fi
 
+LANTERN_SSID="LANTERN"
+LANTERN_INTERNET_SSID="LANTERN-INTERNET"
 
+#-----------------------------------------------------------------------------
 
+###
+# Clear wlan0 interface regardless of state and start fresh
+###
 reset() {
+  create_ap --stop wlan0
+  netctl stop tether
+  sleep 1
   systemctl stop netctl-auto@wlan0
   sleep 1
   ifconfig wlan0 down
@@ -61,21 +70,30 @@ tether() {
   echo "tether mode enabled..."
 }
 
+
+###
+# Stand-alone access point
+###
 ap() {
-    local_ssid="LANTERN"
-    echo "configuring access point: ${local_ssid}"
-    echo "you will need to reconnect through a shared wireless network..."
-    reset
-    sleep 1
-    netctl stop wireless-internet
-    create_ap --redirect-to-localhost --daemon --no-virt -n wlan0 "$local_ssid"
+  ssid=${1:-$LANTERN_SSID}
+  echo "configuring access point: ${ssid}"
+  echo "you will need to reconnect through a shared wireless network..."
+  reset
+  create_ap --redirect-to-localhost --daemon --no-virt -n wlan0 "$ssid"
 }
 
+###
+# Access point with internet access
+###
+ap_internet() {
+  ap $LANTERN_INTERNET_SSID
+}
+
+###
+# Pollination mode
+###
 pollinate() {
   echo "preparing wireless pollinate..."
-  create_ap --stop wlan0
-  sleep 5
-  netctl start wireless-internet
 }
 
 ###
@@ -86,7 +104,7 @@ macs() {
 }
 
 help() {
-  echo "Please choose between network modes: ap, tether, pollinate"
+  echo "Please choose between network modes: ap, ap_internet, tether, pollinate"
 }
 
 #-----------------------------------------------------------------------------

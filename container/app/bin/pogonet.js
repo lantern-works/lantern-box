@@ -18,20 +18,6 @@ var nearbyLanterns;
 
 var autoPogo = false;
 
-var pogo_reset = `
-  create_ap --stop wlan0
-  sleep 1
-  systemctl stop netctl-auto@wlan0
-  sleep 1
-  ifconfig wlan0 down
-  sleep 1
-  rfkill block wlan
-  sleep 1
-  rfkill unblock wlan
-  sleep 1
-  ifconfig wlan0 up
-  sleep 1
-`
 
 //https://stackoverflow.com/questions/13997793/generate-random-number-between-2-numbers
 function random_int(min, max) {
@@ -143,37 +129,27 @@ function pollinate_schedule() {
   console.log("Pollinate scheduled in " + interval.toString() + " seconds.");
 }
 
+/**
+* Start Access Point
+*/
 function ap_start(internet_available) {
-  console.log("Switching to AP mode.");
-
-  var ssid;
-
-  if(internet_available){
-    ssid=LANTERN_INTERNET_SSID;
-  }
-  else {
-    ssid=LANTERN_SSID;
-  }
-
-  cmd.get(
-    //jeff - vetted throws errors, but does bring up lantern
-    //__dirname+'/pogo-ap ' + ssid,
-    pogo_reset + `
-      sleep 1
-      netctl stop-all
-      create_ap --daemon --no-virt -n wlan0 ` + ssid
-    ,
-    function(err, data, stderr) {
-      if(err) {
-        console.log("ERROR creating access point, ssid " + ssid + ": " + stderr);
-      }
-      else {
-        console.log("Access point successfully started, ssid: " + ssid);
-      }
-    }
-  );
+    console.log("Switching to AP mode.");
+    var command = [__dirname + "/wireless"];
+    command.push(internet_available ? "ap_internet" : "ap");
+    console.log(command.join(" "));
+    cmd.get(command.join(" "), function(err, data, stderr) {
+        if(err) {
+            console.log("ERROR creating access point" + stderr);
+        }
+        else {
+          console.log("Access point successfully started", data);
+        }
+    });
 }
 
+
+
+//-----------------------------------------------------------------------------
 // process command line arguments and do the caller's bidding
 switch(String(process.argv[2])){
   case "ap"        : ap_start(false);                      break;
