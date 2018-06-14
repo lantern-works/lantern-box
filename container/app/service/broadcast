@@ -5,7 +5,7 @@ var spawn = require('child_process').spawn;
 var PouchDB = require("lantern-serve").PouchDB;
 
 
-var ping = 40 * 1000; // every 40s tell other lanterns we exist
+var ping_interval = 15 * 1000; // every 30s+random tell other lanterns we exist
 
 //------------------------------------------------------------------------
 
@@ -13,21 +13,24 @@ var ping = 40 * 1000; // every 40s tell other lanterns we exist
 * use MAC address to identify device uniquely
 */
 function getDeviceIdentifier() {
+    var address;
     try {
         // default to wlan0 MAC Address
-        return fs.readFileSync("/sys/class/net/wlan0/address");
+        address = fs.readFileSync("/sys/class/net/wlan0/address");
     }
     catch(e) {
         // fall-back to ethernet MAC Address
         // may be used for docker-based virtual machines
-        return fs.readFileSync("/sys/class/net/eth0/address");
+        address = fs.readFileSync("/sys/class/net/eth0/address");
     }
+    var id = String(address).trim().split(":");
+    return id[0] + id[id.length-1];
 }
 
 /**
 * push change over distributed long-range network
 **/
-function addMessageToQueue(id, msg) {
+function addMessageToQueue(msg) {
     if (!msg) return;
 
     var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
@@ -47,7 +50,7 @@ function addMessageToQueue(id, msg) {
 function notifyDocumentUpdate(doc) {
     var msg = buildParameters(doc);
     if (msg.length) {
-        addMessageToQueue(doc._id, "^"+doc._id + "::" + msg);
+        addMessageToQueue(doc._id + "?" + msg);
     }
 }
 
@@ -57,30 +60,32 @@ function notifyDocumentUpdate(doc) {
 **/
 function notifyDocumentCreate(doc) {
     var msg = buildParameters(doc);
-    addMessageToQueue(doc._id, "+"+doc._id + "::" + msg);
+    addMessageToQueue(doc._id + "?" + msg);
 }
 
 
 /**
 * let other lanterns know about a removed document
 **/
-function notifyDocumentRemove(id) {
-    addMessageToQueue(id, "-"+id);
+function notifyDocumentRemove(doc_id) {
+    addMessageToQueue(doc_id);
 }
 
 /**
-* let other lanterns know this device is online
+* sometimes let other lanterns know this device is online
 **/
 function notifyLanternOnline() {
-    setTimeout(function() {
-        var id = getDeviceIdentifier();
-        if (!id) {
-            console.log("[broadcast] missing lantern id");
-        }
-        else {
-            addMessageToQueue(id, "^d:"+ id + "?st=1");
-        }
-    }, 10000*Math.random());
+    if (Math.random() > 0.3) {
+        setTimeout(function() {
+            var id = getDeviceIdentifier();
+            if (!id) {
+                console.log("[broadcast] missing lantern id");
+            }
+            else {
+                addMessageToQueue("d:"+ id + "?st=1");
+            }
+        }, 15000*Math.random());
+    }
 }
 
 /**
@@ -155,26 +160,26 @@ function onChange(change) {
 
 console.log("[broadcast] about to watch for database changes...");
 
-// give http a head-start to setup...
-setTimeout(function() {
-    var db = new PouchDB("http://localhost/db/lantern/");
-    db.changes({
-            live: true,
-            since: 'now',
-            include_docs: true
-        })
-        .on('active', function() {
-            console.log("[broadcast] active change feed");
-        })
-        .on('paused', function() {
-            console.log("[broadcast] paused change feed");
-        })
-        .on('change', onChange)
-        .on('error', function (err) {
-            console.log(err);
-        });
 
-    console.log("[broadcast] watching changes...");
-    setInterval(notifyLanternOnline, ping);
-}, 30 * 1000);
+var db = new PouchDB("http://localhost/db/lantern/");
+db.changes({
+        live: true,
+        since: 'now',
+        retry: true,
+        include_docs: true
+    })
+    .on('active', function() {
+        console.log("[broadcast] active change feed");
+    })
+    .on('paused', function() {
+        console.log("[broadcast] paused change feed");
+    })
+    .on('change', onChange)
+    .on('error', function (err) {
+        console.log(err);
+    });
+
+console.log("[broadcast] watching changes...");
+setInterval(notifyLanternOnline, ping_interval);
+
 

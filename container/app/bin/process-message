@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-var PouchDB = require("lantern-serve").PouchDB;
 
 if (process.argv.length != 3) {
     console.log("This program requires one and only one argument to run");
@@ -7,8 +6,8 @@ if (process.argv.length != 3) {
 }
 
 //----------------------------------------------------------------------------
-var msg = process.argv[2];
-var db = new PouchDB("http://localhost/db/lantern/");
+var db;
+var input_str = process.argv[2];
 
 
 function processCreate(doc) {
@@ -22,7 +21,6 @@ function processCreate(doc) {
 }
 
 function processUpdate(doc) {
-    console.log("UPDATE TO DOC ", doc);
     db.get(doc._id).then(function(existing_doc) {
         console.log("found document. merging...");
         for (var idx in doc) {
@@ -70,36 +68,44 @@ function processDelete(doc) {
 
 
 //----------------------------------------------------------------------------
-var mod = msg[0];
 
-var parts = msg.substr(1).split("::");
+var input = input_str.replace(/\^+/, '\x01').split('\x01');
+if (input.length == 2) {
+    // update
+    var PouchDB = require("lantern-serve").PouchDB;
+    db = new PouchDB("http://localhost/db/lantern/");
+    
+    var id = input[0];
+    var msg = input[1];
+    var parts = msg.split("?");
 
-// begin constructing doc based on message
-var doc = {
-    _id: parts[0],
-    $rx: true // document received by long-range radio, don't push back out
-};
+    console.log("message id = " + id);
 
-var keys = parts[1];
-if (keys) {
-    keys.split("&").forEach(function(part) {
-        var item = keys.split("=");
-        // double-check to make sure we don't process $key or _key
-        if (item[0][0] == "$" || item[0][0] == "_") {
-            return;
-        }
-        doc[item[0]] = decodeURIComponent(item[1]);
-    });
+    // begin constructing doc based on message
+    var doc = {
+        _id: parts[0],
+        $rx: true // document received by long-range radio, don't push back out
+    };
+
+    var keys = parts[1];
+    if (keys) {
+        keys.split("&").forEach(function(part) {
+            var item = keys.split("=");
+            // double-check to make sure we don't process $key or _key
+            if (item[0][0] == "$" || item[0][0] == "_") {
+                return;
+            }
+            doc[item[0]] = decodeURIComponent(item[1]);
+        });
+            
+        doc.$ra = new Date();
+        processUpdate(doc);
+    }
+    else {
+        // no data means we want to delete the doc
+        processDelete(doc);
+    }
 }
-
-if (mod == "+") {
-    doc.$ca = new Date();
-    processCreate(doc);
-}
-else if (mod == "-") {
-    processDelete(doc);
-}
-else if (mod == "^") {
-    doc.$ra = new Date();
-    processUpdate(doc);
+else {
+    console.log("ignoring message: " + input);
 }

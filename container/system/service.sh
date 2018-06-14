@@ -4,87 +4,46 @@ echo "#############################################"
 echo "## Add Services "
 echo "#############################################"
 
-# http service    
-echo "installing http service..."
-touch /etc/systemd/system/http.service
-cat <<EOF >"/etc/systemd/system/http.service"
-[Unit]
-Description=Lantern Database & Web Service
+function addService() {
+    local svc=$1
+    local label=$2
 
-[Service]
-ExecStart=/opt/lantern/service/http
-Restart=always
+    # http service    
+    echo "installing ${svc} service..."
+    touch /etc/systemd/system/${svc}.service
+    cat <<EOF >"/etc/systemd/system/${svc}.service"
+    [Unit]
+    Description=Lantern ${label} Service
 
-[Install]
-WantedBy=multi-user.target
+    [Service]
+    ExecStart=/opt/lantern/service/${svc}
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
 EOF
-systemctl enable http.service
+    systemctl enable ${svc}.service
+}
+
+addService http "Web & Database"
+addService broadcast "Broadcast"
+addService ap "Access Point / Hotspot"
+addService lora "LoRa Radio"
+addService inbox "Message Inbox"
 
 
-
-# broadcast service    
-echo "installing broadcast service..."
-touch /etc/systemd/system/broadcast.service
-cat <<EOF >"/etc/systemd/system/broadcast.service"
-[Unit]
-Description=Lantern Broadcast Service
-
-[Service]
-ExecStart=/opt/lantern/service/broadcast
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-systemctl enable broadcast.service
-
-
-if [[ -f /boot/config.txt ]]; then
-    echo "installing access point service..."
-    # ap service
-    touch /etc/systemd/system/ap.service
-    cat <<EOF >"/etc/systemd/system/ap.service"
-[Unit]
-Description=Lantern Access Point Service
-
-[Service]
-ExecStart=/opt/lantern/service/ap
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl enable ap.service
-
-
-
-    # lora service
-    echo "installing lora service..."
-    touch /etc/systemd/system/lora.service
-    cat <<EOF >"/etc/systemd/system/lora.service"
-[Unit]
-Description=Lantern LoRa Service
-
-[Service]
-ExecStart=/opt/lantern/service/lora
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl enable lora.service
-fi
-
+echo "#############################################"
+echo "## Adjust File System "
+echo "#############################################"
 
 # create admin user
 useradd -m -g wheel -s /usr/bin/zsh admin
 echo '%wheel ALL=(ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
 
-
-
 # set zsh as the default shell
 chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
 chown admin. /home/admin/.zshrc
 echo 'cd /opt/lantern/' >> /home/admin/.zshrc
+echo 'alias rl="sudo systemctl restart lora"' >> /home/admin/.zshrc
 echo 'export PATH=/opt/lantern/bin/:/opt/lantern/service:$PATH' >> /home/admin/.zshrc
 sync

@@ -1,6 +1,7 @@
 from stephank/archlinux:armv6-base
 
 EXPOSE 80
+EXPOSE 443
 
 # install setup scripts to prepare system
 RUN mkdir -p /tmp/system
@@ -14,8 +15,10 @@ RUN ./network.sh
 COPY system/service.sh .
 RUN ./service.sh
 
+
 # install app
 ARG CACHEBUST=1
 COPY app /opt/lantern
 WORKDIR /opt/lantern
-ENTRYPOINT "/opt/lantern/bin/init"
+RUN /opt/lantern/bin/init
+ENTRYPOINT "zsh"

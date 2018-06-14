@@ -4,20 +4,18 @@ import sys
 import string
 import time
 import signal
+import logging
 import os
 import yaml
-
 from threading import Timer
-from persistqueue import FIFOSQLiteQueue
-
+from persistqueue import UniqueQ
 import rf95
 
 DO_SEND = True
 DO_RECEIVE = True
-DEFAULT_LORA_FREQUENCY = rf95.CH_10_US # 924.68 MHz
-LORA_POWER = 20
-SEND_INTERVAL = 3 # how many seconds should we wait between messages
-LORA_MODEM_CONFIG = (0x78, 0xc4, 0x0C)  # slow and long-range with AGC
+DEFAULT_LORA_FREQUENCY = rf95.CH_05_US
+LORA_POWER = 23
+SEND_INTERVAL = 15 # how many seconds should we wait between messages
 
 #-----------------------------------------------------------------------------
 class RepeatedTimer(object):
@@ -50,12 +48,16 @@ class RepeatedTimer(object):
 lora = rf95.RF95(0, 25, None, 13)
 did_init = False
 is_running_queue = False
-
+is_receiving_message = False
+is_closing = False
+inbox = UniqueQ("/opt/lantern/inbox")
+logging.basicConfig(filename="/opt/lantern/logs/lora.log", level=logging.DEBUG)
 
 
 #-----------------------------------------------------------------------------
 def printNow(str):
     print(str)
+    logging.info(str)
     sys.stdout.flush()
 
 def isLoRaBusy():
@@ -64,81 +66,176 @@ def isLoRaBusy():
     if (current_mode == 128 or current_mode == 129):
         return True
 
+# setup RF95/RF96 modem for our long-range, peer-to-peer data
+def setupRadio(): 
+
+    # determine which frequency to broadcast on
+    try:
+        y = yaml.load(open("/opt/lantern/config.yml"))
+        freq = y["FREQUENCY"]
+        printNow("using custom frequency...")
+    except Exception,e:
+        freq = DEFAULT_LORA_FREQUENCY
+
+    lora.set_frequency(freq)
+    printNow("freq = " + str(freq) + " MHz")
+
+    # set power levels
+    lora.set_tx_power(LORA_POWER)
+    printNow("power level = " + str(LORA_POWER))
+
+    # set custom modem config
+    bandwidth = rf95.BW_62K5HZ
+    coding_rate = rf95.CODING_RATE_4_8
+    imp_header = rf95.IMPLICIT_HEADER_MODE_ON
+    spreading_factor = rf95.SPREADING_FACTOR_2048CPS
+    crc = rf95.RX_PAYLOAD_CRC_ON
+    continuous_tx = rf95.TX_CONTINUOUS_MODE_OFF
+    timeout = rf95.SYM_TIMEOUT_MSB
+    agc_auto = rf95.AGC_AUTO_ON
+
+    #  Low Data Rate Optimisation mandated for when the symbol length exceeds 16ms
+    low_data_rate = 0x08 # aka mobile node
+
+
+    lora.spi_write(rf95.REG_1D_MODEM_CONFIG1, \
+            bandwidth | coding_rate | imp_header)
+
+    lora.spi_write(rf95.REG_1E_MODEM_CONFIG2, \
+            spreading_factor | continuous_tx | crc | timeout)
+
+    # low data rate optimize prevents distortion of characters
+    lora.spi_write(rf95.REG_26_MODEM_CONFIG3, \
+            agc_auto | low_data_rate)
+
+    printNow("bandwidth = " + str(bandwidth))
+    printNow("spreading factor = " + str(spreading_factor))
+    printNow("coding_rate = " + str(coding_rate))
+    printNow("agc_auto = " + str(agc_auto))
+    printNow("current mode = " + str(lora.spi_read(rf95.REG_01_OP_MODE)))
+
+    # announce that modem is ready with lighting effects
+    for x in range(0, 5):
+        lora.flash_led(1)
+
+
+
 # for now, some updates will be missed when we're sending out data
 def checkForIncoming():
-    # Wait until data is available 
-    while is_running_queue or not lora.available():
+    global is_running_queue
+    global is_closing
+    global is_receiving_message
+
+    # Wait until data is available
+    while is_running_queue or not lora.available() or is_closing:
         pass
-    # Receive
+    
+    # Message available, let's read it...
+    is_receiving_message = True
+    lora.led_on()
     payload_size = lora.buflen
     data = lora.recv()
-    print("-----------------")
-    print("receiving:")
     final_str = ""
     for i in data:
-        print(chr(i), end="")
         final_str += chr(i)
-    print("\nbytes received: " + str(payload_size))
-    printNow("-----------------")
-    cmd = "/opt/lantern/bin/process-message " + final_str
-    run = os.system(cmd)
-    print(run)
+    inbox.put(final_str)
+    snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
+
+    printNow("--------------------------------------------------")
+    printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
+    printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
+    printNow(" |- snr = " + str(snr)) #signal-noise-ratio
+    printNow(" |- rx_good = " + str(lora.rx_good)) # successful receipts
+    printNow("==================================================")
+    is_receiving_message = False
+    for x in range(0, 4):
+        lora.flash_led(0.3)
+
 
 def checkForOutgoing():
     global is_running_queue
+    global is_receiving_message
+    global is_closing
+
+    if lora.rx_bad > 0:
+        printNow("bad tx count: " + str(lora.rx_bad))
+
+    if is_closing:
+        pass
     # skip timer runs if we're still processing a queue
-    if not is_running_queue:
-
+    elif is_running_queue:
+        printNow("waiting for outbox to process...")
+    elif is_receiving_message:
+        printNow("waiting for inbox to process...")
+    else:
         is_running_queue = True
-
-        q = FIFOSQLiteQueue(path="/tmp/messages", multithreading=True)
-        to_process = len(q)
-
+        outbox = UniqueQ("/opt/lantern/outbox")
+        to_process = len(outbox)
         if to_process > 0:
-            printNow("queue to process:" + str(to_process))
             
-        while to_process > 0:
-            item = q.get()
-            if len(item):
-                print("-----------------")
-                printNow("sending: "   + item)
-                lora.send(lora.str_to_data(item))
-                lora.wait_packet_sent()
-                payload_size = len(item.encode("utf8"))
-                print("bytes sent: " + str(payload_size))
-                printNow("-----------------")
-            else:
-                printNow("skipping empty message")
-            to_process -= 1
-            if to_process > 0:
-                printNow("remaining in queue: " + str(len(q)))
-            time.sleep(SEND_INTERVAL)
-            q.task_done()
-
-
+            if to_process > 1:
+                printNow("queue to process:" + str(to_process) + "\n\n")
+            
+            while to_process > 0:
+                item = outbox.get()
+                if len(item):
+                    lora.led_on()
+                    time.sleep(2)
+                    # append count to help track duplicates 
+                    # and forward to other devices over LoRa
+                    # long-term we will ignore these messages if they come back
+                    # with the same count as a "unique id"
+                    item = str(lora.tx_good) + "^" + item
+                    power = lora.spi_read(rf95.REG_09_PA_CONFIG)
+                    lna = lora.spi_read(rf95.REG_0C_LNA)
+                    lora.send(lora.str_to_data(item))
+                    printNow("--------------------------------------------------")
+                    printNow("SND "   + item + " (" + str(len(item)) + ")")
+                    lora.wait_packet_sent()
+                    printNow(" |- tx_good = " + str(lora.tx_good))
+                    printNow(" |- reg_pa_config = " + str(power))
+                    printNow(" |- reg_lna = " + str(lna))
+                else:
+                    printNow("skipping empty message")
+                to_process -= 1
+                if to_process > 0:
+                    printNow("remaining in queue: " + str(len(outbox)))
+                lora.led_off()
+                if to_process > 0:
+                    time.sleep(SEND_INTERVAL)
+                outbox.task_done()
+            printNow("==================================================")
+        lora.led_off()
         is_running_queue = False
-
-
-def exitGracefully():
-    printNow("exiting gracefully...")
-    lora.set_mode_idle()
-    time.sleep(1)
-    lora.cleanup()
-    time.sleep(1)
-    sys.exit()
 
 
 
 #-----------------------------------------------------------------------------
 def main():
 
-    print("============================")
-    print("  Lantern LoRa Service")
     printNow("============================")
-    
-    def handleStopSignals(signum, frame):
-        if rt:
+    printNow("  Lantern LoRa Service")
+    printNow("============================")
+
+    def exitGracefully():
+        printNow("\nexiting gracefully...")
+        is_closing = True
+        if 'rt' in locals() and rt.is_running:
             rt.stop()
+            printNow("halting send activity...")
+        else:
+            printNow("no send activity to halt...")
+            
+        lora.set_mode_idle()
+        printNow("set lora to idle...")
+        time.sleep(1)
+        lora.led_off()
+        printNow("running cleanup...")
+        lora.cleanup()
+        sys.exit()
+
+
+    def handleStopSignals(signum, frame):
         exitGracefully()
     
     try:
@@ -146,42 +243,29 @@ def main():
             printNow("radio in use elsewhere...")
             quit(1)
         elif not lora.init(): # returns True if found
-            print("radio not found or not ready. please adjust to CE0 or try later...")
+            printNow("radio not found or not ready. please adjust hardware switch to CE0 or try later...")
             exitGracefully()
         else:
+            print("radio found...")
+            did_init = True
             # make sure we always exit gracefully when running as a service
             signal.signal(signal.SIGINT, handleStopSignals)
             signal.signal(signal.SIGTERM, handleStopSignals)
-            did_init = True
-
-
-            # determine which frequency to broadcast on
-            try:
-                y = yaml.load(open("/opt/lantern/config.yml"))
-                freq = y["FREQUENCY"]
-            except Exception,e:
-                printNow("using default frequency...")
-                freq = DEFAULT_LORA_FREQUENCY
-
-            lora.set_frequency(freq)
-            printNow("radio ready @ " + str(freq) + " MHz")
-
-
-            # setup RF95/RF96 modem for our long-range, peer-to-peer data
-            lora.set_tx_power(LORA_POWER)
-            lora.set_modem_config(LORA_MODEM_CONFIG)
-            printNow("waiting for outgoing messages in queue...")
-
+            # setup frequency, bandwidth, etc.
+            setupRadio()
             # use a timed interval to check our queue and send messages
             if DO_SEND:
-                rt = RepeatedTimer(7, checkForOutgoing)
+                rt = RepeatedTimer(SEND_INTERVAL, checkForOutgoing)
                 rt.start()
+                printNow("ready to send messages...")
 
             if DO_RECEIVE:
                 # when we're not sending messags, drop into receiving mode
-                printNow("watching airwaves for incoming messages...")
+                printNow("watching airwaves...")
                 while True:
                     checkForIncoming()
+
+
 
     except KeyboardInterrupt:
         exitGracefully()
