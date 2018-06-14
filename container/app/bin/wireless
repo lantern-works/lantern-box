@@ -22,6 +22,9 @@ reset() {
 }
 
 
+###
+# Register wireless credentials to tether to existing wireless router
+##
 register() {
   wifi_ssid=$1
   echo "registering new wireless network: $wifi_ssid"
@@ -29,13 +32,13 @@ register() {
   echo "encrypting wifi pass..."
   wifi_pass=`wpa_passphrase ${wifi_ssid} <<< ${2} | grep -oE '(psk=)[a-zA-Z0-9]*$' | tr -d 'psk='`
 
-  if [[ -f /etc/netctl/wireless-internet ]]; then
-    rm /etc/netctl/wireless-internet > /dev/null
+  if [[ -f /etc/netctl/tether ]]; then
+    rm /etc/netctl/tether > /dev/null
   fi
 
-  touch /etc/netctl/wireless-internet
-  cat <<EOF >"/etc/netctl/wireless-internet"
-  Description="Lantern Wireless Internet"
+  touch /etc/netctl/tether
+  cat <<EOF >"/etc/netctl/tether"
+  Description="Lantern - Tether to Wireless Router"
   Interface=wlan0
   Connection=wireless
   Security=wpa
@@ -43,15 +46,19 @@ register() {
   IP=dhcp
   Key="${wifi_pass}"
 EOF
-  echo "wrote new wireless-internet file..."
+  echo "wrote new netctl file named: tether"
 }
 
-internet() {
-  echo "preparing wireless internet..."
+
+###
+# tether to existing wireless router
+###
+tether() {
+  echo "preparing tether to wireless router..."
   create_ap --stop wlan0
   sleep 5
-  netctl start wireless-internet
-  echo "wireless internet enabled..."
+  netctl start tether
+  echo "tether mode enabled..."
 }
 
 ap() {
@@ -74,7 +81,7 @@ pollinate() {
 
 
 help() {
-  echo "Please choose between network modes: ap, internet, pollinate"
+  echo "Please choose between network modes: ap, tether, pollinate"
 }
 
 #-----------------------------------------------------------------------------
