@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-console.log("starting sync for cloud...");
+console.log("starting sync for lantern...");
 
 var PouchDB = require('lantern-serve').PouchDB;
 var local_db = PouchDB("http://localhost/db/lantern");
-var remote_db = PouchDB("https://lantern.global/db/lantern/");
+var remote_db = PouchDB("http://lantern.local/db/lantern");
+
 
 var sync = local_db.sync(remote_db, { 
         live: false, 
