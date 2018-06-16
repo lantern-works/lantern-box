@@ -30,6 +30,7 @@ addService broadcast "Broadcast"
 addService ap "Access Point / Hotspot"
 addService lora "LoRa Radio"
 addService inbox "Message Inbox"
+addService pollinate "P2P Device Sync"
 
 
 echo "#############################################"

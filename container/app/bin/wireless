@@ -9,14 +9,17 @@ fi
 LANTERN_SSID="LANTERN"
 LANTERN_INTERNET_SSID="LANTERN-INTERNET"
 
-#-----------------------------------------------------------------------------
 
+
+#-----------------------------------------------------------------------------
 ###
 # Clear wlan0 interface regardless of state and start fresh
 ###
 reset() {
+  echo "reset wireless..."
   create_ap --stop wlan0
   netctl stop tether
+  netctl stop pollinate
   sleep 1
   systemctl stop netctl-auto@wlan0
   sleep 1
@@ -28,8 +31,8 @@ reset() {
   sleep 1
   ifconfig wlan0 up
   sleep 1
+  echo "reset complete..."
 }
-
 
 ###
 # Register wireless credentials to tether to existing wireless router
@@ -47,20 +50,19 @@ register() {
 
   touch /etc/netctl/tether
   cat <<EOF >"/etc/netctl/tether"
-  Description="Lantern - Tether to Wireless Router"
-  Interface=wlan0
-  Connection=wireless
-  Security=wpa
-  ESSID="${wifi_ssid}"
-  IP=dhcp
-  Key="${wifi_pass}"
+Description="Lantern - Tether to Wireless Router"
+Interface=wlan0
+Connection=wireless
+Security=wpa
+ESSID="${wifi_ssid}"
+IP=dhcp
+Key="${wifi_pass}"
 EOF
   echo "wrote new netctl file named: tether"
 }
 
-
 ###
-# tether to existing wireless router
+# Tether to existing wireless router
 ###
 tether() {
   echo "preparing tether to wireless router..."
@@ -69,7 +71,6 @@ tether() {
   netctl start tether
   echo "tether mode enabled..."
 }
-
 
 ###
 # Stand-alone access point
@@ -90,25 +91,15 @@ ap_internet() {
 }
 
 ###
-# Pollination mode
+# Help Display
 ###
-pollinate() {
-  echo "preparing wireless pollinate..."
-}
-
-###
-# Discover MAC addresses of nearby wireless devices for airing
-###
-macs() {
-  iw wlan0 scan | grep "wlan0\|SSID:\|signal" | paste - - - | grep "^BSS" | grep -v associated | sort -u -k3 | grep $2 | cut -c 5-21
-}
-
 help() {
-  echo "Please choose between network modes: ap, ap_internet, tether, pollinate"
+  echo "Please choose between network modes: ap, ap_internet, tether"
 }
+
+
 
 #-----------------------------------------------------------------------------
-
 until
     cmd=$1
     if [ -z "$cmd" ]; then

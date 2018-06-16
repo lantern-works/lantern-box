@@ -3,13 +3,14 @@
 # when we turn service off, automatically resume back to internet usage...
 function finish {
     echo "shutting down access point services..."
-    echo "attempting to restore wireless internet..."
-    /opt/lantern/bin/wireless internet
     exit 0
 }
 
 trap finish SIGTERM
 trap finish EXIT
+
+echo "make sure we stop any pollination..."
+systemctl stop pollinate
 
 echo "bringing wireless access point online..."
 /opt/lantern/bin/wireless ap
