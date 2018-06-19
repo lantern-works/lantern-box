@@ -20,5 +20,4 @@ RUN ./service.sh
 ARG CACHEBUST=1
 COPY app /opt/lantern
 WORKDIR /opt/lantern
-RUN /opt/lantern/bin/init
-ENTRYPOINT "zsh"
+ENTRYPOINT "/opt/lantern/bin/init"

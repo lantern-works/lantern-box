@@ -39,6 +39,16 @@ function set_perms {
 
 #-----------------------------------------------------------------------------
 
+  echo "#############################################"
+if [[ -f /tmp/lantern-init ]]; then
+  DID_INIT=true
+  echo "# Re-Initialize"
+else
+  DID_INIT=false
+  echo "# Initialize"
+fi
+  echo "#############################################"
+
 # enter into app directory and read config file if available
 cd /opt/lantern/
 
@@ -46,22 +56,19 @@ cd /opt/lantern/
 mkdir -p ./logs
 
 if [[ -f ./config.yml ]]; then
-  echo "#############################################"
-  echo "# Device Config"
-  echo "#############################################"
   eval $(parse_yaml ./config.yml)
   cat ./config.yml
 fi
 
 # refresh node modules and make sure we have everything needed to run services
-SKIP_NPM=${SKIP_NPM:-false}
-if [[ "${SKIP_NPM}" == "true" ]]; then
-  echo "skipping node module installs by request..."
+
+if [[ "${DID_INIT}" == "true" ]]; then
+  echo "skipping node module we already installed..."
 else
-  echo "installing node modules..."
+  echo "installing lantern-serve..."
   rm -rf node_modules/*
   if [[ -d ./node_modules/lantern-serve ]]; then
-    echo "node modules already installed..."
+    echo "lantern-serve already installed..."
   else
     npm install lantern-works/lantern-serve --build-from-source=sqlite3   
   fi
@@ -86,11 +93,13 @@ if [[ -f /boot/config.txt ]]; then
   echo "updating admin password..."
   ADMIN_PASS=${ADMIN_PASS:-wins}
   echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
+  touch /tmp/lantern-init
   sync
 else
   # make this a docker entrypoint
   ./service/http & # systemd is not compatible with docker so run service manually
   ./service/broadcast &
+  touch /tmp/lantern-init
   su admin
   zsh # drop into our shell for convenience
   trap : TERM INT; sleep infinity & wait # keep machine running

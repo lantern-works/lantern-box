@@ -6,6 +6,7 @@ var PouchDB = require("lantern-serve").PouchDB;
 
 
 var ping_interval = 15 * 1000; // every 30s+random tell other lanterns we exist
+var start_delay = 30;
 
 //------------------------------------------------------------------------
 
@@ -162,24 +163,27 @@ console.log("[broadcast] about to watch for database changes...");
 
 
 var db = new PouchDB("http://localhost/db/lantern/");
-db.changes({
-        live: true,
-        since: 'now',
-        retry: true,
-        include_docs: true
-    })
-    .on('active', function() {
-        console.log("[broadcast] active change feed");
-    })
-    .on('paused', function() {
-        console.log("[broadcast] paused change feed");
-    })
-    .on('change', onChange)
-    .on('error', function (err) {
-        console.log(err);
-    });
 
-console.log("[broadcast] watching changes...");
-setInterval(notifyLanternOnline, ping_interval);
+setTimeout(function() {
+    db.changes({
+            live: true,
+            since: 'now',
+            retry: true,
+            include_docs: true
+        })
+        .on('active', function() {
+            console.log("[broadcast] active change feed");
+        })
+        .on('paused', function() {
+            console.log("[broadcast] paused change feed");
+        })
+        .on('change', onChange)
+        .on('error', function (err) {
+            console.log(err);
+        });
 
+    console.log("[broadcast] watching changes...");
+    setInterval(notifyLanternOnline, ping_interval);
+
+}, start_delay);
 

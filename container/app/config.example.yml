@@ -1,3 +1,0 @@
-# rename this file to config.yml to deploy these settings
-ADMIN_PASS: wins # password for "admin" user to SSH into the device
-SKIP_NPM: false # set to true to skip npm installs (for speed of build)
