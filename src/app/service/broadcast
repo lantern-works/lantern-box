@@ -4,28 +4,25 @@ var fs = require("fs");
 var spawn = require('child_process').spawn;
 var PouchDB = require("lantern-serve").PouchDB;
 
-
+var db;
 var ping_interval = 15 * 1000; // every 30s+random tell other lanterns we exist
-var start_delay = 30;
+var start_delay = 15 * 1000;
 
 //------------------------------------------------------------------------
 
 /**
-* use MAC address to identify device uniquely
+* unique device identifier
 */
 function getDeviceIdentifier() {
-    var address;
     try {
-        // default to wlan0 MAC Address
-        address = fs.readFileSync("/sys/class/net/wlan0/address");
+        var file_path = path.join(__dirname, "..", "node_modules", "lantern-serve", "config.json");
+        var obj = JSON.parse(fs.readFileSync(file_path, 'utf8'));
+        return obj.id;
     }
     catch(e) {
-        // fall-back to ethernet MAC Address
-        // may be used for docker-based virtual machines
-        address = fs.readFileSync("/sys/class/net/eth0/address");
+        console.log(e);
+        return "---";
     }
-    var id = String(address).trim().split(":");
-    return id[0] + id[id.length-1];
 }
 
 /**
@@ -73,20 +70,20 @@ function notifyDocumentRemove(doc_id) {
 }
 
 /**
-* sometimes let other lanterns know this device is online
+* let other lanterns know this device is online
 **/
 function notifyLanternOnline() {
-    if (Math.random() > 0.3) {
-        setTimeout(function() {
-            var id = getDeviceIdentifier();
-            if (!id) {
-                console.log("[broadcast] missing lantern id");
-            }
-            else {
-                addMessageToQueue("d:"+ id + "?st=1");
-            }
-        }, 15000*Math.random());
-    }
+    setTimeout(function() {
+        var id = getDeviceIdentifier();
+        db.get("d:"+id).then(function(doc) {
+            addMessageToQueue(doc._id + "?st=" + doc.st + "&tt=" + doc.tt);
+        })
+        .catch(function(err) {
+            console.log(err);
+            console.log("[broadcast] missing lantern id");
+        });
+
+    }, 15000*Math.random());
 }
 
 /**
@@ -159,12 +156,15 @@ function onChange(change) {
 * start listening for changes
 **/
 
-console.log("[broadcast] about to watch for database changes...");
-
-
-var db = new PouchDB("http://localhost/db/lantern/");
-
 setTimeout(function() {
+
+    console.log("##############################################");
+    console.log(" Lantern Broadcast Service (" + getDeviceIdentifier() + ")");
+    console.log("##############################################");
+
+
+    db = new PouchDB("http://localhost/db/lantern/");
+
     db.changes({
             live: true,
             since: 'now',

@@ -14,8 +14,8 @@ build:
 run:
 	docker run -it  \
 		--volume ${PWD}/src/app/node_modules:/opt/lantern/node_modules \
-		-p 8080:80 \
-		-p 8443:443 \
+		-p 80:80 \
+		-p 443:443 \
 		"lantern-box:${TAG}"
 
 image:

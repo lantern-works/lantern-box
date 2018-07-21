@@ -12,7 +12,7 @@ pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     bash-completion tmux git \
     nodejs npm python2 python2-pip base-devel \
     create_ap hostapd dnsmasq avahi nss-mdns wpa_supplicant \
-    wpa_actiond ifplugd crda
+    wpa_actiond ifplugd crda sqlite
 
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
