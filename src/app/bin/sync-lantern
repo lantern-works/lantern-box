@@ -3,8 +3,8 @@
 console.log("starting sync for lantern...");
 
 var PouchDB = require('lantern-serve').PouchDB;
-var local_db = PouchDB("http://localhost/db/lantern");
-var lantern_db = PouchDB("http://lantern.local/db/lantern");
+var local_db = PouchDB("http://localhost/db/lnt");
+var lantern_db = PouchDB("http://lantern.local/db/lnt");
 
 
 var sync = local_db.sync(lantern_db, { 

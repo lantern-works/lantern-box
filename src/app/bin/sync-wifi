@@ -98,13 +98,13 @@ sync() {
   ip neigh >> $LOGFILE 2>&1
 
   # get database status before sync
-  curl http://lantern.local/db/lantern/ >> $LOGFILE 2>&1
+  curl http://lantern.local/db/lnt/ >> $LOGFILE 2>&1
 
   # do the sync
   /opt/lantern/bin/sync-lantern >> $LOGFILE 2>&1
 
   # get database status after sync
-  curl http://lantern.local/db/lantern/ >> $LOGFILE 2>&1
+  curl http://lantern.local/db/lnt/ >> $LOGFILE 2>&1
 
   # disconnect
   netctl stop pollinate >> $LOGFILE 2>&1

@@ -73,7 +73,7 @@ var input = input_str.replace(/\^+/, '\x01').split('\x01');
 if (input.length == 2) {
     // update
     var PouchDB = require("lantern-serve").PouchDB;
-    db = new PouchDB("http://localhost/db/lantern/");
+    db = new PouchDB("http://localhost/db/lnt/");
     
     var id = input[0];
     var msg = input[1];

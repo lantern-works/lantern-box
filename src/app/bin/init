@@ -73,7 +73,7 @@ else
   fi
 fi
 
-node ./node_modules/lantern-serve/update.js
+node ./node_modules/lantern-serve/lib/updateWebInterface.js
 
 set_perms
 

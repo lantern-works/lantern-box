@@ -15,7 +15,7 @@ var start_delay = 15 * 1000;
 */
 function getDeviceIdentifier() {
     try {
-        var file_path = path.join(__dirname, "..", "node_modules", "lantern-serve", "config.json");
+        var file_path = path.join(__dirname, "..", "node_modules", "lantern-serve", "conf", "lantern.json");
         var obj = JSON.parse(fs.readFileSync(file_path, 'utf8'));
         return obj.id;
     }
@@ -163,7 +163,7 @@ setTimeout(function() {
     console.log("##############################################");
 
 
-    db = new PouchDB("http://localhost/db/lantern/");
+    db = new PouchDB("http://localhost/db/lnt/");
 
     db.changes({
             live: true,
