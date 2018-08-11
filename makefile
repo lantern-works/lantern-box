@@ -16,6 +16,7 @@ run:
 		--volume ${PWD}/src/app/node_modules:/opt/lantern/node_modules \
 		-p 80:80 \
 		-p 443:443 \
+		-m 512M \
 		"lantern-box:${TAG}"
 
 image:
