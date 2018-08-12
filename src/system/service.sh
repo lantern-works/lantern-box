@@ -7,30 +7,79 @@ echo "#############################################"
 function addService() {
     local svc=$1
     local label=$2
+    local timer=$3
 
     # http service    
     echo "installing ${svc} service..."
     touch /etc/systemd/system/${svc}.service
-    cat <<EOF >"/etc/systemd/system/${svc}.service"
-    [Unit]
-    Description=Lantern ${label} Service
 
-    [Service]
-    ExecStart=/opt/lantern/service/${svc}
-    Restart=always
+    if [[ $timer ]]; then
+        cat <<EOF >"/etc/systemd/system/${svc}.service"
+[Unit]
+Description=Lantern ${label} Service
 
-    [Install]
-    WantedBy=multi-user.target
+[Service]
+Type=simple
+ExecStart=/opt/lantern/service/${svc}
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
 EOF
+    else
+        cat <<EOF >"/etc/systemd/system/${svc}.service"
+[Unit]
+Description=Lantern ${label} Service
+
+[Service]
+ExecStart=/opt/lantern/service/${svc}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    fi
+
+    cat "/etc/systemd/system/${svc}.service"
+
+
     systemctl enable ${svc}.service
+
+
+    if [[ $timer ]]; then
+
+        cat <<EOF >"/etc/systemd/system/${svc}.timer"
+
+[Unit]
+Description=Run ${svc} every ${timer} seconds
+
+[Timer]
+OnBootSec=60sec
+OnUnitInactiveSec=${timer}sec
+
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+        cat "/etc/systemd/system/${svc}.timer"
+        systemctl daemon-reload
+        systemctl start ${svc}.timer
+    fi
+
 }
 
+# run these all the time
 addService http "Web & Database"
-addService broadcast "Broadcast"
 addService ap "Access Point / Hotspot"
 addService lora "LoRa Radio"
-addService inbox "Message Inbox"
-addService pollinate "P2P Device Sync"
+
+# bring these up on a timer
+addService broadcast "Broadcast" 45
+addService inbox "Message Inbox" 30
+# addService pollinate "P2P Device Sync" 600
+
+
 
 
 echo "#############################################"

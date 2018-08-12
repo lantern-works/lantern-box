@@ -1,20 +1,4 @@
 #!/bin/bash
 
-
-# how long should we stay in AP mode before dropping out to pollinate?
-POLLINATE_INTERVAL=20
-
-
-# when we turn service off, automatically resume back to internet usage...
-function finish {
-    echo "shutting down pollinate service..."
-    exit 0
-}
-
-trap finish SIGTERM
-trap finish EXIT
-
-echo "begin automated pollination..."
-while true; do /opt/lantern/bin/sync-wifi start; sleep $POLLINATE_INTERVAL; done
-
-sleep infinity & wait
+/opt/lantern/bin/sync-wifi start
+exit

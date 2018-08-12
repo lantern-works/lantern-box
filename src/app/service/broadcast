@@ -1,12 +1,40 @@
 #!/usr/bin/env node
 var path = require("path");
 var fs = require("fs");
-var spawn = require('child_process').spawn;
-var PouchDB = require("lantern-serve").PouchDB;
+var spawnSync = require('child_process').spawnSync;
 
+
+
+
+//------------------------------------------------------------------------
+var done = (function wait() { 
+    if (!done) {
+        setTimeout(wait, 1000)
+    }
+    else {
+        log.info("closing service...\n");
+        log.info("##############################################\n");
+        setTimeout(process.exit, 100);
+    }
+})();
+
+var broadcast_seq_rev; // used to keep track of our local document for sequence
+
+var logger_opts = {
+    logDirectory:'/opt/lantern/logs/',
+    fileNamePattern:'broadcast-<DATE>.log',
+    dateFormat:'YYYY.MM.DD'
+};
+
+var log = require('simple-node-logger').createRollingFileLogger( logger_opts );
+log.info("##############################################");
+log.info("Lantern Broadcast Service (" + getDeviceIdentifier() + ")");
+log.info("##############################################\n");
+
+var PouchDB = require("lantern-serve").PouchDB;
 var db;
-var ping_interval = 15 * 1000; // every 30s+random tell other lanterns we exist
-var start_delay = 15 * 1000;
+
+
 
 //------------------------------------------------------------------------
 
@@ -20,7 +48,7 @@ function getDeviceIdentifier() {
         return obj.id;
     }
     catch(e) {
-        console.log(e);
+        log.error(e);
         return "---";
     }
 }
@@ -30,16 +58,9 @@ function getDeviceIdentifier() {
 **/
 function addMessageToQueue(msg) {
     if (!msg) return;
-
-    var program = spawn(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
-
-    program.stdout.on('data', function (data) {
-        console.log("[broadcast] " + data.toString());
-    });
-
-    program.stderr.on('data', function (data) {
-      console.log('[broadcast] q err: ' + data.toString());
-    });
+    log.info("sending message to queue: " + msg);
+    var result = spawnSync(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
+    log.info(String(result.stdout));
 }
 
 /**
@@ -79,11 +100,41 @@ function notifyLanternOnline() {
             addMessageToQueue(doc._id + "?st=" + doc.st + "&tt=" + doc.tt);
         })
         .catch(function(err) {
-            console.log(err);
-            console.log("[broadcast] missing lantern id");
+            log.error(err);
+            log.error("missing lantern id");
         });
 
     }, 15000*Math.random());
+}
+
+/**
+* check for updates since last broadcast revision
+*/
+function checkForChanges(since) {
+
+    log.info("find changes since: " + since);
+
+    return db.changes({
+            since: Number(since),
+            include_docs: true,
+            limit: 20
+        })
+        .then(function(data) {
+            if (data.results.length == 0 ) {
+                log.info("no changes since " + since);
+            }
+            else {
+                data.results.forEach(onChange);
+            }
+            return data.last_seq;
+        })
+        .then(saveSince)
+        .catch(function(err) {
+            log.error(err);
+            log.error("failed, exit anyway...");
+            done = true;
+        });
+
 }
 
 /**
@@ -124,16 +175,13 @@ function onChange(change) {
         }
         // filters out changes made from LoRa to prevent echo
         else if (doc.$ra) {
-            console.log("[broadcast] skip " + doc._id + " received by radio");
-            return;
-        }
-        else if (doc.$ia) {
-            console.log("[broadcast] skip " + doc._id + " imported directly");
+            log.info("skip " + doc._id + " received by radio");
             return;
         }
 
+        log.info("====== " + doc._id + "======");
 
-        console.log(["======", doc._id, rev, "======"].join(" "));
+        log.info(change.doc);
 
         // push change over distributed long-range network
         if(!doc.$ra && doc._rev[0] == "1" && doc._rev[1] == "-") {
@@ -143,47 +191,76 @@ function onChange(change) {
         else if (!doc.$ra) {
             notifyDocumentUpdate(doc);
         }
-
-        console.log(change);
-        console.log("\n\n\n");
+        log.info("\n\n\n");
     }
 }
 
 
+function getUpdateSeq() {
+    return db.info().then(function(res) {
+        return res.update_seq;
+    });
+}
+
+function saveSince(since) {
+
+    if (since == undefined) {
+        log.warn("Skipping without required: since");
+        return;
+    }
+
+    var doc = {
+      _id: '_local/broadcast_seq',
+      since: since,
+      updated_at: new Date()
+    }
+
+    if (broadcast_seq_rev) {
+        doc._rev = broadcast_seq_rev;
+    }
+
+    return db.post(doc)
+        .then(function(res) {
+            log.debug(res);
+            broadcast_seq_rev = res.rev;
+            return since;
+        })
+        .catch(function(err) {
+            log.error(err);
+        })
+}
 
 //------------------------------------------------------------------------
 /**
 * start listening for changes
 **/
 
-setTimeout(function() {
 
-    console.log("##############################################");
-    console.log(" Lantern Broadcast Service (" + getDeviceIdentifier() + ")");
-    console.log("##############################################");
+db = new PouchDB("http://localhost/db/lnt/");;
 
-
-    db = new PouchDB("http://localhost/db/lnt/");
-
-    db.changes({
-            live: true,
-            since: 'now',
-            retry: true,
-            include_docs: true
+getUpdateSeq()
+    .then(function(update_seq) {
+        return db.get("_local/broadcast_seq").then(function(doc) {
+            broadcast_seq_rev = doc._rev;
+            if (!doc.hasOwnProperty("since")) {
+                return saveSince(update_seq).then(checkForChanges);
+            }
+            else {
+                return checkForChanges(doc.since);
+            }
         })
-        .on('active', function() {
-            console.log("[broadcast] active change feed");
-        })
-        .on('paused', function() {
-            console.log("[broadcast] paused change feed");
-        })
-        .on('change', onChange)
-        .on('error', function (err) {
-            console.log(err);
+        .catch(function(err) {
+            log.error(err);
+            if (err.name == "not_found") {
+                return saveSince(update_seq).then(checkForChanges);
+            }
         });
-
-    console.log("[broadcast] watching changes...");
-    setInterval(notifyLanternOnline, ping_interval);
-
-}, start_delay);
+    })
+    .then(function() {
+        done = true;
+    })
+    .catch(function(err) {
+        log.error(err);
+        done = true;
+    })
 

@@ -97,7 +97,6 @@ if [[ -f /boot/config.txt ]]; then
 else
   # make this a docker entrypoint
   ./service/http & # systemd is not compatible with docker so run service manually
-  ./service/broadcast &
   touch /tmp/lantern-init
   su admin
   zsh # drop into our shell for convenience

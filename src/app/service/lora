@@ -188,9 +188,9 @@ def checkForOutgoing():
                     item = str(lora.tx_good) + "^" + item
                     power = lora.spi_read(rf95.REG_09_PA_CONFIG)
                     lna = lora.spi_read(rf95.REG_0C_LNA)
-                    lora.send(lora.str_to_data(item))
                     printNow("--------------------------------------------------")
                     printNow("SND "   + item + " (" + str(len(item)) + ")")
+                    lora.send(lora.str_to_data(item))
                     lora.wait_packet_sent()
                     printNow(" |- tx_good = " + str(lora.tx_good))
                     printNow(" |- reg_pa_config = " + str(power))
