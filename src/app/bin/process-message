@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 
 if (process.argv.length != 3) {
-    log.info("This program requires one and only one argument to run");
+    console.log("This program requires one and only one argument to run");
     process.exit();
 }
-
-//----------------------------------------------------------------------------
 
 var logger_opts = {
     logDirectory:'/opt/lantern/logs/',
@@ -15,6 +13,8 @@ var logger_opts = {
 
 var log = require('simple-node-logger').createRollingFileLogger( logger_opts );
 
+
+//----------------------------------------------------------------------------
 
 var db;
 var input_str = process.argv[2];
@@ -27,6 +27,7 @@ function processCreate(doc) {
     })
     .catch(function(err) {
         log.info(err);
+        process.exit();
     });
 }
 
@@ -37,13 +38,20 @@ function processUpdate(doc) {
             existing_doc[idx] = doc[idx];
         }
 
-        log.info("merged doc", existing_doc);
+        // note: may be inaccurate due to offline system clock
+        var now = new Date();
+
+        if (existing_doc.hasOwnProperty("$ua") && now.getTime() > new Date(existing_doc.$ua).getTime()) {
+            existing_doc.$ua = new Date();
+        }
+
+        log.info("UPDATE TO DOC", existing_doc);
 
         return db.post(existing_doc)
             .then(function(results) {
                 log.info(results);
+                process.exit();
             });
-
     })
     .catch(function(err) {
         if (err.status == 404) {
@@ -51,6 +59,7 @@ function processUpdate(doc) {
         }
         else {
             log.info(err);
+            process.exit();
         }
     });
 }
@@ -63,14 +72,17 @@ function processDelete(doc) {
         doc._rev = existing_doc._rev;
         return db.remove(doc).then(function(results) {
             log.info(results);
+            process.exit();
         });
     })
     .catch(function(err) {
         if (err.status == 404) {
             log.info("can't update non-existing document");
+            process.exit();
         }
         else {
             log.info(err);
+            process.exit();
         }
     });
 }
@@ -99,13 +111,41 @@ if (input.length == 2) {
 
     var keys = parts[1];
     if (keys) {
-        keys.split("&").forEach(function(part) {
-            var item = keys.split("=");
+        log.info(keys);
+        var key_parts = keys.split("&");
+        log.info(key_parts);
+
+        key_parts.forEach(function(part) {
+
+            var item = part.split("=");
+            var k = item[0];
+            var v = item[1];
+
             // double-check to make sure we don't process $key or _key
-            if (item[0][0] == "$" || item[0][0] == "_") {
+            if (k[0] == "$" || k[0] == "_") {
                 return;
             }
-            doc[item[0]] = decodeURIComponent(item[1]);
+
+            v = decodeURIComponent(v);
+
+            // is this a comma-separated list? if so, assume array
+            if (v[0] == ",") {
+                doc[k] = new Array();
+                v.split(",").forEach(function(val) {
+                    if (val) doc[k].push(val);
+                });
+            }
+            // is this a number?
+            else if (v[0] == "#") {
+                doc[k] = Number(v.substr(1, v.length-1));
+            }
+            else {
+                doc[k] = v;                
+            }
+
+
+
+
         });
             
         doc.$ra = new Date();
@@ -118,4 +158,5 @@ if (input.length == 2) {
 }
 else {
     log.info("ignoring message: " + input);
+    process.exit();
 }

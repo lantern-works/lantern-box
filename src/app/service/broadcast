@@ -45,11 +45,14 @@ function getDeviceIdentifier() {
     try {
         var file_path = path.join(__dirname, "..", "node_modules", "lantern-serve", "conf", "lantern.json");
         var obj = JSON.parse(fs.readFileSync(file_path, 'utf8'));
+        if (!obj.id) {
+            throw new Error("Missing device identifier");
+        }
         return obj.id;
     }
     catch(e) {
         log.error(e);
-        return "---";
+        done = true;
     }
 }
 
@@ -146,8 +149,12 @@ function buildParameters(doc) {
         // ignore private keys and reserved _ namespace items when sending
         if (k[0] != "_" && k[0] != "$") {
             var val = doc[k];
-            if (val instanceof Array) {
-                val = val.join(",");
+
+            if (typeof val === 'number') {
+                val = "#"+val;
+            }
+            else if (val instanceof Array) {
+                val = ","+val.join(",");
             }
             else if (typeof(val) == "object") {
                 val = JSON.stringify(val);
@@ -170,13 +177,25 @@ function onChange(change) {
 
         if (doc._deleted) {
             // @todo notify once we can isolate most meaningful deletes
+            log.info("cowardly refusing to send delete over network, for now...");
             return;
             //notifyDocumentRemove(doc._id);
         }
         // filters out changes made from LoRa to prevent echo
         else if (doc.$ra) {
-            log.info("skip " + doc._id + " received by radio");
-            return;
+
+            if (doc.hasOwnProperty("$ua")) {
+                var updated_at = new Date(doc.$ua).getTime();
+                var received_at = new Date(doc.$ra).getTime();
+                if (updated_at <= received_at) {
+                    log.info("skip " + doc._id + " received by radio");
+                    return;
+                }
+                else {
+                    log.info("updating doc received from another lantern");
+                }
+            }
+
         }
 
         log.info("====== " + doc._id + "======");
@@ -184,11 +203,11 @@ function onChange(change) {
         log.info(change.doc);
 
         // push change over distributed long-range network
-        if(!doc.$ra && doc._rev[0] == "1" && doc._rev[1] == "-") {
+        if(doc._rev[0] == "1" && doc._rev[1] == "-") {
             // assume document has been created if we're at first revision
             notifyDocumentCreate(doc);
         }
-        else if (!doc.$ra) {
+        else {
             notifyDocumentUpdate(doc);
         }
         log.info("\n\n\n");
@@ -250,9 +269,12 @@ getUpdateSeq()
             }
         })
         .catch(function(err) {
-            log.error(err);
             if (err.name == "not_found") {
+                log.info("no stored update sequence. mapping to current database last_seq...");
                 return saveSince(update_seq).then(checkForChanges);
+            }
+            else {
+                log.error(err);
             }
         });
     })
