@@ -2,9 +2,18 @@
 
 console.log("starting sync for lantern...");
 
+var done = (function wait() { 
+    if (!done) {
+        setTimeout(wait, 1000)
+    }
+    else {
+        setTimeout(process.exit, 100);
+    }
+})();
+
 var PouchDB = require('lantern-serve').PouchDB;
 var local_db = PouchDB("http://localhost/db/lnt");
-var lantern_db = PouchDB("http://lantern.local/db/lnt");
+var lantern_db = PouchDB("http://lantern.global/db/lnt");
 
 
 var sync = local_db.sync(lantern_db, { 
@@ -24,9 +33,11 @@ var sync = local_db.sync(lantern_db, {
     })
     .on('complete', function() {
         console.log("[sync] complete");
-        process.exit(0);
+        done = true;
+        process.exit(0);9
     })
     .on('error', function (err) {
         console.log("err: ", err);
+        done = true;
         process.exit(1);
     });

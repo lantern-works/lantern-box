@@ -6,41 +6,53 @@ if [[ $UID != 0 ]]; then
     exit 1
 fi
 
-LANTERN_SSID="LANTERN"
-LOGFILE="logs/pollinate.log"
+# search phrase to identify valid devices nearby
+SSID_MATCH="LANTERN"
 
+# log file to record activity while device wifi network is momentarily offline
+LOGFILE="/opt/lantern/logs/pollinate.log"
+
+touch $LOGFILE
 
 
 #-----------------------------------------------------------------------------
 ##
 # Start Sync for All Nearby Lanterns
 # @todo don't shut down wlan0 before scanning
-# @todo iterate through nearby lanterns twice to make sure all are in sync
 # @todo pick the strongest LANTERN_INTERNET nearby and sync to that first, to get latest before pollinating
 ##
 start() {
   
-  list=`macs`
+  list=`macs ${SSID_MATCH}`
 
-  if [[ $list == "" ]]; then
-    echo "no nearby Lanterns to sync with..."
-    exit
+  for mac_addr in $list; do
+    echo "sync target = $mac_addr"
+  done
+
+
+  if [ -z "$list" ]; then
+    echo "skipping sync since no devices in list to sync..."
+  else
+
+    echo "----------------- Pollinate Start ------------------" >> $LOGFILE 2>&1
+
+    echo "taking access point offline for sync..."
+
+    # stop any existing usage for wlan0 interface
+    systemctl stop ap
+
+    sleep 5
+
+    for mac_addr in $list; do
+      register $mac_addr
+      sync $mac_addr multi
+    done
+
+    echo "----------------- Pollinate Stop ------------------" >> $LOGFILE 2>&1
+
+    systemctl start ap
   fi
-
-  # iterate through lanterns by mac address
-  echo -e $list | while read mac_addr ; do
-   echo === $mac_addr ===
-  done
   
-  echo "taking access point offline for sync..."
-
-  echo "----------------- Pollinate Start ------------------" >> $LOGFILE 2>&1
-  macs | while read mac_addr ; do
-    register $mac_addr
-    sync $mac_addr multi
-  done
-  systemctl start ap
-  echo "----------------- Pollinate Stop ------------------" >> $LOGFILE 2>&1
 }
 
 
@@ -48,30 +60,31 @@ register() {
   mac_addr=$1
 
   if [ -z "$mac_addr" ]; then
-    echo "please provide MAC Address for SSID ${LANTERN_SSID}"
+    echo "please provide MAC Address..."
     exit
   fi
+
+  netctl disable pollinate
 
   path="/etc/netctl/pollinate"
 
   if [[ -f $path ]]; then
-    echo "device already registered"
-  else
-    touch $path
-    cat <<EOF >"$path"
+    rm $path
+  fi
+  
+
+  touch $path
+  cat <<EOF >"$path"
 Description="Lantern - Pollinate Mode"
 Interface=wlan0
 Connection=wireless
 Security=none
-ESSID="${LANTERN_SSID}"
 IP=dhcp
 AP=${mac_addr}
 EOF
-    echo "$path:"
-    cat $path
-    netctl enable pollinate
-    touch /opt/lantern/logs/pollinate.log
-  fi
+  echo "$path:"
+  cat $path
+  netctl enable pollinate
 }
 
 ##
@@ -79,42 +92,57 @@ EOF
 ##
 sync() {
 
+
   mac_addr=$1
   do_multi=$2
 
   echo "Going offline to sync ${mac_addr}..."
 
-  echo "========== Sync ${mac_addr} ==========" >> $LOGFILE 2>&1
+ if [[ -z "$do_multi" ]]; then
+    # stop any existing usage for wlan0 interface
+    systemctl stop ap
+    sleep 3
+  fi
 
-  # stop any existing usage for wlan0 interface
-  systemctl stop ap
-  sleep 5
+
+  echo "========== Sync ${mac_addr} ==========" >> $LOGFILE 2>&1
 
   # connect to wireless network
   netctl start pollinate >> $LOGFILE 2>&1
-  sleep 5
+  sleep 3
+
 
   # check network
   ip neigh >> $LOGFILE 2>&1
 
+
+  sleep 3
+
+  curl  -s http://lantern.global/api/info >> $LOGFILE 2>&1
+
+  echo "status before sync" >> $LOGFILE 2>&1
+
   # get database status before sync
-  curl http://lantern.local/db/lnt/ >> $LOGFILE 2>&1
+  curl  -s http://lantern.global/db/lnt/ >> $LOGFILE 2>&1
 
   # do the sync
   /opt/lantern/bin/sync-lantern >> $LOGFILE 2>&1
 
   # get database status after sync
-  curl http://lantern.local/db/lnt/ >> $LOGFILE 2>&1
+  curl  -s http://lantern.global/db/lnt/ >> $LOGFILE 2>&1
 
   # disconnect
   netctl stop pollinate >> $LOGFILE 2>&1
+  sleep 3
+
+  echo "========== Stop ${mac_addr} ==========" >> $LOGFILE 2>&1
+
+
 
   # if we're running this command stand-alone, bring back access point afterwards
   if [[ -z "$do_multi" ]]; then
       systemctl start ap
   fi
-
-  echo "========== Stop ${mac_addr} ==========" >> $LOGFILE 2>&1
 
 }
 
@@ -123,7 +151,7 @@ sync() {
 # @todo allow for custom SSID values
 ###
 macs() {
-  ssid=${1:-$LANTERN_SSID}
+  ssid=${1:-$SSID_MATCH}
   iw wlan0 scan | grep "wlan0\|SSID:\|signal" | paste - - - | grep "^BSS" | grep -v associated | sort -u -k3 | grep $ssid | cut -c 5-21
 }
 
