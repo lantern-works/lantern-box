@@ -5,6 +5,19 @@ if (process.argv.length != 3) {
     process.exit();
 }
 
+
+var done = (function wait() { 
+    if (!done) {
+        setTimeout(wait, 1000)
+    }
+    else {
+        log.info("ending message processing...\n");
+        log.info("##############################################\n");
+        setTimeout(process.exit, 100);
+    }
+})();
+
+
 var logger_opts = {
     logDirectory:'/opt/lantern/logs/',
     fileNamePattern:'inbox-message-<DATE>.log',
@@ -13,6 +26,7 @@ var logger_opts = {
 
 var log = require('simple-node-logger').createRollingFileLogger( logger_opts );
 
+log.info("##############################################\n");
 
 //----------------------------------------------------------------------------
 
@@ -22,44 +36,73 @@ var input_str = process.argv[2];
 
 function processCreate(doc) {
     log.info("CREATE DOC ", doc);
+    
+    // convert timestamp to updated_at field
+    if (doc.hasOwnProperty("ts")) {
+        doc.$ua = new Date(doc.ts);
+        delete doc.ts;
+    }
+
     return db.post(doc).then(function(results) {
         log.info(results);
+        done = true;
     })
     .catch(function(err) {
         log.info(err);
-        process.exit();
+        done = true;
     });
 }
 
-function processUpdate(doc) {
-    db.get(doc._id).then(function(existing_doc) {
-        log.info("found document. merging...");
-        for (var idx in doc) {
-            existing_doc[idx] = doc[idx];
+function processUpdate(changes) {
+
+    return db.get(changes._id).then(function(doc) {
+
+        log.info("found document " + doc._id + " merging...");
+        
+        // make sure new document has different significant values
+        var did_change = false;
+        for (var idx in changes) {
+            if (idx[0] != "$" && idx != "ts") {
+                if (!doc.hasOwnProperty(idx) || JSON.stringify(doc[idx]) != JSON.stringify(changes[idx])) {
+                    doc[idx] = changes[idx];
+                    did_change = true;
+                    log.info("changed: ", idx, changes[idx]);
+                }   
+            }
         }
 
-        // note: may be inaccurate due to offline system clock
-        var now = new Date();
-
-        if (existing_doc.hasOwnProperty("$ua") && now.getTime() > new Date(existing_doc.$ua).getTime()) {
-            existing_doc.$ua = new Date();
+        if (!did_change) {
+            log.info("skipping unchanged document " + doc._id);
+            return;
         }
 
-        log.info("UPDATE TO DOC", existing_doc);
+        // check version numbers where available for updates
+        if (changes.hasOwnProperty("ts") && doc.hasOwnProperty("$ua")) {            
+            var ts_a = changes.ts;
+            var ts_b = new Date(doc.$ua).getTime();
+            if (ts_a <= ts_b) {
+                log.info("skipping older document " + doc._id, ts_a, ts_b);
+                return;
+            }
+        }
 
-        return db.post(existing_doc)
+        log.info("UPDATE TO DOC", doc);
+
+        return db.post(doc)
             .then(function(results) {
                 log.info(results);
-                process.exit();
             });
+    })
+    .then(function() {
+        done = true;
     })
     .catch(function(err) {
         if (err.status == 404) {
-            processCreate(doc);
+            processCreate(changes);
         }
         else {
             log.info(err);
-            process.exit();
+            done = true;
         }
     });
 }
@@ -67,22 +110,22 @@ function processUpdate(doc) {
 function processDelete(doc) {
     log.info("DELETE DOC ", doc);
 
-    db.get(doc._id).then(function(existing_doc) {
+    db.get(doc._id).then(function(old_doc) {
         log.info("found document. removing...");
-        doc._rev = existing_doc._rev;
+        doc._rev = old_doc._rev;
         return db.remove(doc).then(function(results) {
             log.info(results);
-            process.exit();
+            done = true;
         });
     })
     .catch(function(err) {
         if (err.status == 404) {
             log.info("can't update non-existing document");
-            process.exit();
+            done = true;
         }
         else {
             log.info(err);
-            process.exit();
+            done = true;
         }
     });
 }
@@ -99,6 +142,13 @@ if (input.length == 2) {
     
     var id = input[0];
     var msg = input[1];
+
+    if (msg.indexOf("?") == -1) {
+        log.info("ignoring message without query string", msg);
+        done = true;
+        return;
+    }
+
     var parts = msg.split("?");
 
     log.info("message id = " + id);
@@ -110,53 +160,43 @@ if (input.length == 2) {
     };
 
     var keys = parts[1];
-    if (keys) {
-        log.info(keys);
-        var key_parts = keys.split("&");
-        log.info(key_parts);
+    log.info(keys);
+    var key_parts = keys.split("&");
+    log.info(key_parts);
 
-        key_parts.forEach(function(part) {
+    key_parts.forEach(function(part) {
 
-            var item = part.split("=");
-            var k = item[0];
-            var v = item[1];
+        var item = part.split("=");
+        var k = item[0];
+        var v = item[1];
 
-            // double-check to make sure we don't process $key or _key
-            if (k[0] == "$" || k[0] == "_") {
-                return;
-            }
+        // double-check to make sure we don't process $key or _key
+        if (k[0] == "$" || k[0] == "_") {
+            return;
+        }
 
-            v = decodeURIComponent(v);
+        v = decodeURIComponent(v);
 
-            // is this a comma-separated list? if so, assume array
-            if (v[0] == ",") {
-                doc[k] = new Array();
-                v.split(",").forEach(function(val) {
-                    if (val) doc[k].push(val);
-                });
-            }
-            // is this a number?
-            else if (v[0] == "#") {
-                doc[k] = Number(v.substr(1, v.length-1));
-            }
-            else {
-                doc[k] = v;                
-            }
-
-
-
-
-        });
-            
-        doc.$ra = new Date();
-        processUpdate(doc);
-    }
-    else {
-        // no data means we want to delete the doc
-        processDelete(doc);
-    }
+        // is this a comma-separated list? if so, assume array
+        if (v[0] == ",") {
+            doc[k] = new Array();
+            v.split(",").forEach(function(val) {
+                if (val) doc[k].push(val);
+            });
+        }
+        // is this a number?
+        else if (v[0] == "#") {
+            doc[k] = Number(v.substr(1, v.length-1));
+        }
+        else {
+            doc[k] = v;                
+        }
+    });
+    
+    processUpdate(doc);
+    
 }
 else {
     log.info("ignoring message: " + input);
-    process.exit();
+    done = true;
 }

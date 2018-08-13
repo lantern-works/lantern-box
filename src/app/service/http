@@ -42,6 +42,11 @@ echo "Starting app:"
 echo "> node $node_args"
 
 
+systemctl daemon-reload
+systemctl start broadcast.timer
+systemctl start inbox.timer
+
+
 # Start the process using `exec`.
 # This ensures that when node exits,
 # the exit code is passed up to the

@@ -75,6 +75,8 @@ fi
 
 node ./node_modules/lantern-serve/lib/updateWebInterface.js
 
+ls ./node_modules/lantern-serve/public
+
 set_perms
 
 #-----------------------------------------------------------------------------

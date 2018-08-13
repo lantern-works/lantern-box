@@ -24,7 +24,6 @@ while to_process > 0:
     printNow(item)
     cmd = '/opt/lantern/bin/process-message "' + item + '"'
     run = os.system(cmd)
-    printNow(run)
 
-# printNow("empty inbox. closing...")
+printNow("empty inbox. closing...")
 sys.exit()

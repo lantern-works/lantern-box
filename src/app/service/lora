@@ -138,7 +138,7 @@ def checkForIncoming():
     final_str = ""
     for i in data:
         final_str += chr(i)
-    inbox.put(final_str)
+    inbox.put(str(final_str))
     snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
 
     printNow("--------------------------------------------------")

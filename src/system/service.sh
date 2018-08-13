@@ -54,7 +54,7 @@ EOF
 Description=Run ${svc} every ${timer} seconds
 
 [Timer]
-OnBootSec=60sec
+OnBootSec=120sec
 OnUnitInactiveSec=${timer}sec
 
 
@@ -63,8 +63,6 @@ WantedBy=multi-user.target
 
 EOF
         cat "/etc/systemd/system/${svc}.timer"
-        systemctl daemon-reload
-        systemctl start ${svc}.timer
     fi
 
 }

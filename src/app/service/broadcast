@@ -27,8 +27,16 @@ var logger_opts = {
 };
 
 var log = require('simple-node-logger').createRollingFileLogger( logger_opts );
+
+var identifier = getDeviceIdentifier();
+
+if (!identifier) {
+    done = true;
+    return;
+}
+
 log.info("##############################################");
-log.info("Lantern Broadcast Service (" + getDeviceIdentifier() + ")");
+log.info("Lantern Broadcast Service (" + identifier + ")");
 log.info("##############################################\n");
 
 var PouchDB = require("lantern-serve").PouchDB;
@@ -52,7 +60,6 @@ function getDeviceIdentifier() {
     }
     catch(e) {
         log.error(e);
-        done = true;
     }
 }
 
@@ -72,7 +79,15 @@ function addMessageToQueue(msg) {
 function notifyDocumentUpdate(doc) {
     var msg = buildParameters(doc);
     if (msg.length) {
-        addMessageToQueue(doc._id + "?" + msg);
+        msg = doc._id + "?" + msg;
+
+        // use timestamp as primitive form for conflict resolution
+        // @todo use more advanced conflict resolution and versioning
+        if (doc.hasOwnProperty("$ua")) {
+            msg += "&ts=" + new Date(doc.$ua).getTime();
+        }
+
+        addMessageToQueue(msg);
     }
 }
 
