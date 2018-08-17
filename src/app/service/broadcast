@@ -2,9 +2,7 @@
 var path = require("path");
 var fs = require("fs");
 var spawnSync = require('child_process').spawnSync;
-
-
-
+var PouchDB = require("lantern-serve").PouchDB;
 
 //------------------------------------------------------------------------
 var done = (function wait() { 
@@ -18,15 +16,12 @@ var done = (function wait() {
     }
 })();
 
-var broadcast_seq_rev; // used to keep track of our local document for sequence
-
 var logger_opts = {
-    logDirectory:'/opt/lantern/logs/',
-    fileNamePattern:'broadcast-<DATE>.log',
+    logFilePath:'/opt/lantern/logs/broadcast.log',
     dateFormat:'YYYY.MM.DD'
 };
 
-var log = require('simple-node-logger').createRollingFileLogger( logger_opts );
+var log = require('simple-node-logger').createSimpleFileLogger( logger_opts );
 
 var identifier = getDeviceIdentifier();
 
@@ -39,10 +34,11 @@ log.info("##############################################");
 log.info("Lantern Broadcast Service (" + identifier + ")");
 log.info("##############################################\n");
 
-var PouchDB = require("lantern-serve").PouchDB;
+
 var db;
 
 
+var updated_at_limit;
 
 //------------------------------------------------------------------------
 
@@ -68,7 +64,7 @@ function getDeviceIdentifier() {
 **/
 function addMessageToQueue(msg) {
     if (!msg) return;
-    log.info("sending message to queue: " + msg);
+    //log.info("sending message to queue: " + msg);
     var result = spawnSync(path.resolve(__dirname + "/../bin/queue-message"), [msg]);
     log.info(String(result.stdout));
 }
@@ -79,14 +75,7 @@ function addMessageToQueue(msg) {
 function notifyDocumentUpdate(doc) {
     var msg = buildParameters(doc);
     if (msg.length) {
-        msg = doc._id + "?" + msg;
-
-        // use timestamp as primitive form for conflict resolution
-        // @todo use more advanced conflict resolution and versioning
-        if (doc.hasOwnProperty("$ua")) {
-            msg += "&ts=" + new Date(doc.$ua).getTime();
-        }
-
+        msg = doc._rev.split("-")[0] + "^" + doc._id + "?" + msg;
         addMessageToQueue(msg);
     }
 }
@@ -95,65 +84,39 @@ function notifyDocumentUpdate(doc) {
 /**
 * let other lanterns know about a new document
 **/
-function notifyDocumentCreate(doc) {
-    var msg = buildParameters(doc);
-    addMessageToQueue(doc._id + "?" + msg);
-}
+var notifyDocumentCreate = notifyDocumentUpdate;
 
 
 /**
 * let other lanterns know about a removed document
 **/
 function notifyDocumentRemove(doc_id) {
-    addMessageToQueue(doc_id);
-}
-
-/**
-* let other lanterns know this device is online
-**/
-function notifyLanternOnline() {
-    setTimeout(function() {
-        var id = getDeviceIdentifier();
-        db.get("d:"+id).then(function(doc) {
-            addMessageToQueue(doc._id + "?st=" + doc.st + "&tt=" + doc.tt);
-        })
-        .catch(function(err) {
-            log.error(err);
-            log.error("missing lantern id");
-        });
-
-    }, 15000*Math.random());
+    addMessageToQueue(doc._rev.split("-")[0] + "^" + doc_id);
 }
 
 /**
 * check for updates since last broadcast revision
 */
 function checkForChanges(since) {
+    since = (since ? Number(since) : "now");
+    log.info("find database changes since: " + since);
 
-    log.info("find changes since: " + since);
-
-    return db.changes({
-            since: Number(since),
-            include_docs: true,
-            limit: 20
+    db.changes({
+            continuous: true,
+            since: since,
+            include_docs: true
         })
-        .then(function(data) {
-            if (data.results.length == 0 ) {
-                log.info("no changes since " + since);
-            }
-            else {
-                data.results.forEach(onChange);
-            }
-            return data.last_seq;
+        .on("change", onChange)
+        .on("complete", function() {
+            log.info("[sync] complete");
+            done = true;
         })
-        .then(saveSince)
-        .catch(function(err) {
-            log.error(err);
-            log.error("failed, exit anyway...");
+        .on('error', function (err) {
+            log.error("err: ", err);
             done = true;
         });
-
 }
+
 
 /**
 * construct a query-string style list of key/value pairs
@@ -166,102 +129,82 @@ function buildParameters(doc) {
             var val = doc[k];
 
             if (typeof val === 'number') {
-                val = "#"+val;
+                params.push(k+"=#"+val);
             }
             else if (val instanceof Array) {
-                val = ","+val.join(",");
+                if (typeof(val[0]) == "object") {
+                    // don't try to relay objects
+                }
+                else {
+                    params.push(k+"=,"+val.join(","));
+                }
+            }
+            else if (typeof val === 'string') {
+                params.push(k+"="+val);
             }
             else if (typeof(val) == "object") {
-                val = JSON.stringify(val);
+                // don't try to relay objects
             }
-            params.push(k+"="+val);
         }
     }
     return params.join("&");
 }
 
+function processDoc(doc) {
+
+
+    if (doc.hasOwnProperty("$rx")) {
+        log.info("skip document already received by radio: " + doc._id);
+        return;
+    }
+
+    if (doc.hasOwnProperty("$ua")) {
+        try {
+            if (updated_at_limit) {
+                var updated_at = new Date(doc.$ua).getTime();
+                var cut_off = updated_at_limit.getTime();
+                if (updated_at < cut_off) {
+                    log.info("refuse to send old document...", doc._id);
+                    return;
+                }
+            }
+            updated_at_limit = new Date(doc.$ua);
+        }
+        catch(e) {
+            log.error(e);
+            log.error("invalid updated_at field detected, ignoring...")
+            return;
+        }
+    }
+
+    if (doc._deleted) {
+        // @todo notify once we can isolate most meaningful deletes
+        log.info("cowardly refusing to send delete over network, for now...");
+        return;
+        //notifyDocumentRemove(doc._id);
+    }
+    
+    log.info("====== " + doc._id + " ======");
+    //log.info(doc);
+
+    // push change over distributed long-range network
+    if(doc._rev[0] == "1" && doc._rev[1] == "-") {
+        // assume document has been created if we're at first revision
+        notifyDocumentCreate(doc);
+    }
+    else {
+        notifyDocumentUpdate(doc);
+    }
+}
 
 /**
 * handler to process any document change in local lantern database
 **/
 function onChange(change) {
-    var msg = "";
+    // log.info("change", change);
     for (var idx in change.changes) {
-        var doc = change.doc;
-        var rev = change.changes[idx].rev;
-
-        if (doc._deleted) {
-            // @todo notify once we can isolate most meaningful deletes
-            log.info("cowardly refusing to send delete over network, for now...");
-            return;
-            //notifyDocumentRemove(doc._id);
-        }
-        // filters out changes made from LoRa to prevent echo
-        else if (doc.$ra) {
-
-            if (doc.hasOwnProperty("$ua")) {
-                var updated_at = new Date(doc.$ua).getTime();
-                var received_at = new Date(doc.$ra).getTime();
-                if (updated_at <= received_at) {
-                    log.info("skip " + doc._id + " received by radio");
-                    return;
-                }
-                else {
-                    log.info("updating doc received from another lantern");
-                }
-            }
-
-        }
-
-        log.info("====== " + doc._id + "======");
-
-        log.info(change.doc);
-
-        // push change over distributed long-range network
-        if(doc._rev[0] == "1" && doc._rev[1] == "-") {
-            // assume document has been created if we're at first revision
-            notifyDocumentCreate(doc);
-        }
-        else {
-            notifyDocumentUpdate(doc);
-        }
-        log.info("\n\n\n");
+        processDoc(change.doc);
     }
-}
-
-
-function getUpdateSeq() {
-    return db.info().then(function(res) {
-        return res.update_seq;
-    });
-}
-
-function saveSince(since) {
-
-    if (since == undefined) {
-        log.warn("Skipping without required: since");
-        return;
-    }
-
-    var doc = {
-      _id: '_local/broadcast_seq',
-      since: since,
-      updated_at: new Date()
-    }
-
-    if (broadcast_seq_rev) {
-        doc._rev = broadcast_seq_rev;
-    }
-
-    return db.post(doc)
-        .then(function(res) {
-            log.debug(res);
-            broadcast_seq_rev = res.rev;
-            return since;
-        })
-        .catch(function(err) {
-            log.error(err);
-        })
 }
 
 //------------------------------------------------------------------------
@@ -269,35 +212,5 @@ function saveSince(since) {
 * start listening for changes
 **/
 
-
 db = new PouchDB("http://localhost/db/lnt/");;
-
-getUpdateSeq()
-    .then(function(update_seq) {
-        return db.get("_local/broadcast_seq").then(function(doc) {
-            broadcast_seq_rev = doc._rev;
-            if (!doc.hasOwnProperty("since")) {
-                return saveSince(update_seq).then(checkForChanges);
-            }
-            else {
-                return checkForChanges(doc.since);
-            }
-        })
-        .catch(function(err) {
-            if (err.name == "not_found") {
-                log.info("no stored update sequence. mapping to current database last_seq...");
-                return saveSince(update_seq).then(checkForChanges);
-            }
-            else {
-                log.error(err);
-            }
-        });
-    })
-    .then(function() {
-        done = true;
-    })
-    .catch(function(err) {
-        log.error(err);
-        done = true;
-    })
-
+checkForChanges();

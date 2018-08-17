@@ -73,8 +73,8 @@ addService ap "Access Point / Hotspot"
 addService lora "LoRa Radio"
 
 # bring these up on a timer
-addService broadcast "Broadcast" 45
-addService inbox "Message Inbox" 30
+addService broadcast "Broadcast" 15
+addService inbox "Message Inbox" 8
 # addService pollinate "P2P Device Sync" 600
 
 

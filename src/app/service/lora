@@ -178,14 +178,11 @@ def checkForOutgoing():
             
             while to_process > 0:
                 item = outbox.get()
+                # item includes revision number so we can forward to other devices over LoRa
+                # this helps us ignore old documents and duplicates
                 if len(item):
                     lora.led_on()
                     time.sleep(2)
-                    # append count to help track duplicates 
-                    # and forward to other devices over LoRa
-                    # long-term we will ignore these messages if they come back
-                    # with the same count as a "unique id"
-                    item = str(lora.tx_good) + "^" + item
                     power = lora.spi_read(rf95.REG_09_PA_CONFIG)
                     lna = lora.spi_read(rf95.REG_0C_LNA)
                     printNow("--------------------------------------------------")
