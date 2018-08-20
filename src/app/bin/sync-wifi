@@ -118,18 +118,8 @@ sync() {
 
   sleep 3
 
-  curl  -s http://lantern.global/api/info >> $LOGFILE 2>&1
-
-  echo "status before sync" >> $LOGFILE 2>&1
-
-  # get database status before sync
-  curl  -s http://lantern.global/db/lnt/ >> $LOGFILE 2>&1
-
   # do the sync
-  /opt/lantern/bin/sync-lantern >> $LOGFILE 2>&1
-
-  # get database status after sync
-  curl  -s http://lantern.global/db/lnt/ >> $LOGFILE 2>&1
+  curl -s -X POST http://localhost/sync/ >> $LOGFILE 2>&1
 
   # disconnect
   netctl stop pollinate >> $LOGFILE 2>&1
