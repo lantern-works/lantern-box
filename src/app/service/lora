@@ -15,7 +15,7 @@ DO_SEND = True
 DO_RECEIVE = True
 DEFAULT_LORA_FREQUENCY = rf95.CH_05_US
 LORA_POWER = 23
-SEND_INTERVAL = 15 # how many seconds should we wait between messages
+SEND_INTERVAL = 7 # how many seconds should we wait between messages
 
 #-----------------------------------------------------------------------------
 class RepeatedTimer(object):
@@ -138,18 +138,18 @@ def checkForIncoming():
     final_str = ""
     for i in data:
         final_str += chr(i)
-    inbox.put(str(final_str))
-    snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
 
     printNow("--------------------------------------------------")
     printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
+    inbox.put(str(final_str))
+    snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
     printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
     printNow(" |- snr = " + str(snr)) #signal-noise-ratio
     printNow(" |- rx_good = " + str(lora.rx_good)) # successful receipts
     printNow("==================================================")
     is_receiving_message = False
-    for x in range(0, 4):
-        lora.flash_led(0.3)
+    for x in range(0, 3):
+        lora.flash_led(0.5)
 
 
 def checkForOutgoing():
@@ -182,11 +182,10 @@ def checkForOutgoing():
                 # this helps us ignore old documents and duplicates
                 if len(item):
                     lora.led_on()
-                    time.sleep(2)
-                    power = lora.spi_read(rf95.REG_09_PA_CONFIG)
-                    lna = lora.spi_read(rf95.REG_0C_LNA)
                     printNow("--------------------------------------------------")
                     printNow("SND "   + item + " (" + str(len(item)) + ")")
+                    power = lora.spi_read(rf95.REG_09_PA_CONFIG)
+                    lna = lora.spi_read(rf95.REG_0C_LNA)
                     lora.send(lora.str_to_data(item))
                     lora.wait_packet_sent()
                     printNow(" |- tx_good = " + str(lora.tx_good))

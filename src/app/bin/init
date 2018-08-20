@@ -73,9 +73,11 @@ else
   fi
 fi
 
-node ./node_modules/lantern-serve/lib/updateWebInterface.js
+cd ./node_modules/lantern-serve && npm run refresh
 
-ls ./node_modules/lantern-serve/public
+ls ./public
+
+cd /opt/lantern
 
 set_perms
 

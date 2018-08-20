@@ -22,8 +22,7 @@ if to_process > 1:
 while to_process > 0:
     item = inbox.get()
     printNow(item)
-    cmd = '/opt/lantern/bin/process-message "' + item + '"'
+    cmd = "curl -H 'Content-Type: application/json' -X POST --data '{\"message\": \"" + item + "\"}' http://localhost/sync/message"
+    printNow(cmd)
     run = os.system(cmd)
-
-printNow("empty inbox. closing...")
-sys.exit()
+    printNow(run)
