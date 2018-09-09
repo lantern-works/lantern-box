@@ -50,10 +50,14 @@ fi
   echo "#############################################"
 
 # enter into app directory and read config file if available
+
+PLATFORM_DIR="/opt/lantern"
+MODULE_DIR="/opt/lantern/node_modules/lantern-serve"
+
 cd /opt/lantern/
 
 # make log directory
-mkdir -p ./logs
+mkdir -p "${PLATFORM_DIR}/logs"
 
 if [[ -f ./config.yml ]]; then
   eval $(parse_yaml ./config.yml)
@@ -66,19 +70,21 @@ if [[ "${DID_INIT}" == "true" ]]; then
   echo "skipping node module we already installed..."
 else
   echo "installing lantern-serve..."
-  if [[ -d ./node_modules/lantern-serve ]]; then
+  if [[ -d $MODULE_DIR ]]; then
     echo "lantern-serve already installed..."
   else
-    npm install lantern-works/lantern-serve --build-from-source=sqlite3   
+    npm install lantern-works/lantern-serve#box --build-from-source=sqlite3   
   fi
 fi
 
-cd ./node_modules/lantern-serve && npm run refresh
-
-ls ./public
-
-cd /opt/lantern
-
+ln -s "${PLATFORM_DIR}/sslcert" "${MODULE_DIR}/sslcert" 
+ln -s "${PLATFORM_DIR}/logs" "${MODULE_DIR}/logs"
+ls -al "${MODULE_DIR}/public"
+cd $MODULE_DIR
+cat package.json
+npm run load-db
+npm run load-apps
+cd $PLATFORM_DIR
 set_perms
 
 #-----------------------------------------------------------------------------
