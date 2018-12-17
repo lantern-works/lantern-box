@@ -9,11 +9,11 @@ CONTAINERS := $(shell docker ps -a -q)
 .PHONY: build
 
 build:
-	docker build --build-arg CACHEBUST="${DATE}" -t "lantern-box:${TAG}" ./src
+	docker build --build-arg CACHEBUST="${DATE}" -t "lantern-box:${TAG}" ./system
 
 run:
 	docker run -it  \
-		--volume ${PWD}/src/app/node_modules:/opt/lantern/node_modules \
+		--volume ${PWD}/node_modules:/opt/lantern/node_modules \
 		-p 80:80 \
 		-p 443:443 \
 		-m 512M \
@@ -22,11 +22,11 @@ run:
 image:
 	docker pull westlane/pi-maker
 	docker run -it --privileged \
-	--volume ${PWD}:/tmp \
+	--volume ${PWD}:/tmp/pi \
 	-e IMAGE_NAME="flash-to-pi.img" \
 	-e IMAGE_SIZE="3G" \
-	-e COPY_DIR="/tmp/src/app" \
-	-e SCRIPT_DIR="/tmp/src/system" \
+	-e COPY_DIR="/tmp/lantern/" \
+	-e SCRIPT_DIR="/tmp/init/" \
 	-e SETUP_SCRIPT="/tmp/pi-setup" \
 	westlane/pi-maker
 

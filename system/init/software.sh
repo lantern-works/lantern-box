@@ -10,9 +10,9 @@ sed -i -e 's/Required DatabaseOptional/Never/g' /etc/pacman.conf
 #install other system requirements
 pacman -Syu --noconfirm sudo nano zsh grml-zsh-config \
     bash-completion tmux git \
-    nodejs npm python2 python2-pip base-devel \
+    npm python2 python2-pip base-devel \
     create_ap hostapd dnsmasq avahi nss-mdns wpa_supplicant \
-    wpa_actiond ifplugd crda sqlite
+    wpa_actiond ifplugd crda
 
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
