@@ -24,7 +24,7 @@ make image
 [Download Etcher](http://etcher.io) and use this to flash your image onto a MicroSD card 8GB or greater. Your image will be named "flash-to-pi.img" by default and will be located in a "build" folder.
 
 
-After starting up your Lantern, you can SSH as the "admin" user with the password "wins". Next, you can view status of the services by watching these logs:
+After starting up your Lantern, you should see a wireless SSID broadcast automatically within a few minutes. You can connect to this without a password and a window should pop-up in your browser, welcoming you to the network. If on a computer, you can also SSH as the "admin" user with the password "wins" using the hostname lantern.link (this hostname works with or without internet, but you can only SSH while connected to your own Lantern device). Next, you can view status of the services by watching these logs:
 
 ```bash
 journalctl -f -u lora
