@@ -71,9 +71,8 @@ EOF
 addService http "Web & Database"
 addService ap "Access Point / Hotspot"
 addService lora "LoRa Radio"
-addService inbox "Message Inbox"
-addService broadcast "Broadcast"
-
+# addService inbox "Message Inbox"
+# addService broadcast "Broadcast"
 # bring these up on a timer
 # addService pollinate "P2P Device Sync" 600
 
