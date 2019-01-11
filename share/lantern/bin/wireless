@@ -65,6 +65,12 @@ EOF
 # Tether to existing wireless router
 ###
 tether() {
+
+  if [[ ! -f /etc/netctl/tether ]]; then
+    echo "please use register command to specify SSID and password..."
+    exit
+  fi
+
   echo "preparing tether to wireless router..."
   create_ap --stop wlan0
   sleep 5
