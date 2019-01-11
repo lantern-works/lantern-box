@@ -3,7 +3,7 @@ import sys
 import logging
 import os
 from persistqueue import UniqueQ
-inbox = UniqueQ("/opt/lantern/inbox")
+inbox = UniqueQ("/lantern/inbox")
 
 logging.basicConfig(filename="/opt/lantern/logs/inbox.log", level=logging.DEBUG)
 

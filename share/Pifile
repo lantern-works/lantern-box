@@ -6,20 +6,18 @@ echo "---------------------------------------------"
 echo " Starting Lantern configuration..."
 echo "---------------------------------------------"
 
-mv /lantern/ /opt/lantern/
-
-if [[ -f /opt/lantern/service/http ]]; then
+if [[ -f /lantern/system/http ]]; then
 	/tmp/init/hardware.sh # configure hardware
 	/tmp/init/software.sh # setup all software needed
 	/tmp/init/network.sh # setup discovery and networking
 	/tmp/init/service.sh # setup custom services
-	/tmp/init/finalize.sh # prepare our system for first boot
+	/lantern/bin/entrypoint # get server modules ready for use
 	echo "---------------------------------------------"
 	echo " Your Lantern has been successfully configured"
 	echo "---------------------------------------------"
 else
-	ls -al /opt/lantern
+	ls -al /lantern
 	echo "---------------------------------------------"
-	echo " WARNING: /opt/lantern not as expected"
+	echo " WARNING: /lnt not as expected"
 	echo "---------------------------------------------"
 fi

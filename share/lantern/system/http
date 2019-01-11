@@ -14,8 +14,11 @@ echo "============================"
 # Safe Limit for Raspberry Pi Zero
 WEB_MEMORY=250
 
-dir="/opt/server"
+dir="/lantern/server"
 node_args="${dir}/web/index.js --color"
+
+export SSL_CERTIFICATE="${dir}/certs/cert.pem"
+export SSL_PRIVATE_KEY="${dir}/certs/privkey.pem"
 
 if [[ -n "$WEB_MEMORY" ]]; then
   # The WEB_MEMORY environment variable is set.

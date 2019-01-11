@@ -10,7 +10,7 @@ fi
 SSID_MATCH="LANTERN"
 
 # log file to record activity while device wifi network is momentarily offline
-LOGFILE="/opt/lantern/logs/pollinate.log"
+LOGFILE="/lantern/logs/pollinate.log"
 
 touch $LOGFILE
 

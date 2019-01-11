@@ -14,7 +14,7 @@ echo "=============================="
 # Safe Limit for Raspberry Pi Zero
 WEB_MEMORY=150
 
-dir="/opt/lantern/bin"
+dir="/lantern/bin"
 node_args="${dir}/sync-lora --color"
 
 if [[ -n "$WEB_MEMORY" ]]; then

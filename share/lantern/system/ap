@@ -13,6 +13,6 @@ echo "make sure we stop any pollination..."
 systemctl stop pollinate
 
 echo "bringing wireless access point online..."
-/opt/lantern/bin/wireless ap
+/lantern/bin/wireless ap
 
 sleep infinity & wait

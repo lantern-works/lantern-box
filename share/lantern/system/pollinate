@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/lantern/bin/sync-wifi start
+exit

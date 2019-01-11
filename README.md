@@ -34,10 +34,6 @@ journalctl -f -u lora
 journalctl -f -u http
 ```
 
-```bash
-tail -f /opt/lantern/db/db-log.txt
-```
-
 
 ### Requirements
 

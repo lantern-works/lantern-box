@@ -20,7 +20,7 @@ var done = (function wait() {
 })();
 
 var logger_opts = {
-    logFilePath:'/opt/lantern/logs/broadcast.log',
+    logFilePath:'/lantern/logs/broadcast.log',
     dateFormat:'YYYY.MM.DD'
 };
 

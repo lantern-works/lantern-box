@@ -7,17 +7,17 @@ if [[ $UID != 0 ]]; then
 fi
 
 freq=$1
-touch /opt/lantern/config.yml
+touch /lantern/config.yml
 
-existing_freq=`grep 'FREQUENCY: ' /opt/lantern/config.yml`
+existing_freq=`grep 'FREQUENCY: ' /lantern/config.yml`
 
 if [[ $existing_freq != "" ]]; then
     echo "Switching frequency from: "
     echo $existing_freq
-    sed -i -e "s/$existing_freq/FREQUENCY: ${freq}/g" /opt/lantern/config.yml
+    sed -i -e "s/$existing_freq/FREQUENCY: ${freq}/g" /lantern/config.yml
 
 else
-  echo -e "\nFREQUENCY: ${1}" >> /opt/lantern/config.yml
+  echo -e "\nFREQUENCY: ${1}" >> /lantern/config.yml
 fi
 
 echo "frequency ${1} set for lantern..."

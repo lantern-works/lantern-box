@@ -15,10 +15,9 @@ COPY init/network.sh .
 RUN ./network.sh
 COPY init/service.sh .
 RUN ./service.sh
-COPY init/finalize.sh .
-
 
 # install app
 ARG CACHEBUST=1
-COPY lantern /opt/lantern
-ENTRYPOINT "/tmp/init/finalize.sh"
+COPY lantern /lantern/
+WORKDIR /lantern/
+ENTRYPOINT "/lantern/bin/entrypoint"

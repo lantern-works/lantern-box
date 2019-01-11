@@ -50,8 +50,8 @@ did_init = False
 is_running_queue = False
 is_receiving_message = False
 is_closing = False
-inbox = UniqueQ("/opt/lantern/inbox")
-logging.basicConfig(filename="/opt/lantern/logs/lora.log", level=logging.DEBUG)
+inbox = UniqueQ("/lantern/inbox")
+logging.basicConfig(filename="/lantern/logs/lora.log", level=logging.DEBUG)
 
 
 #-----------------------------------------------------------------------------
@@ -71,7 +71,7 @@ def setupRadio():
 
     # determine which frequency to broadcast on
     try:
-        y = yaml.load(open("/opt/lantern/config.yml"))
+        y = yaml.load(open("/lantern/config.yml"))
         freq = y["FREQUENCY"]
         printNow("using custom frequency...")
     except Exception,e:
@@ -169,7 +169,7 @@ def checkForOutgoing():
         printNow("waiting for inbox to process...")
     else:
         is_running_queue = True
-        outbox = UniqueQ("/opt/lantern/outbox")
+        outbox = UniqueQ("/lantern/outbox")
         to_process = len(outbox)
         if to_process > 0:
             

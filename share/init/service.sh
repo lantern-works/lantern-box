@@ -20,7 +20,7 @@ Description=Lantern ${label} Service
 
 [Service]
 Type=simple
-ExecStart=/opt/lantern/service/${svc}
+ExecStart=/lantern/system/${svc}
 StandardError=journal
 
 [Install]
@@ -32,7 +32,7 @@ EOF
 Description=Lantern ${label} Service
 
 [Service]
-ExecStart=/opt/lantern/service/${svc}
+ExecStart=/lantern/system/${svc}
 Restart=always
 
 [Install]
@@ -70,7 +70,7 @@ EOF
 # run these all the time
 addService http "Web & Database"
 addService ap "Access Point / Hotspot"
-addService lora "LoRa Radio"
+# addService lora "LoRa Radio"
 # addService inbox "Message Inbox"
 # addService broadcast "Broadcast"
 # bring these up on a timer
@@ -90,7 +90,7 @@ echo '%wheel ALL=(ALL) NOPASSWD:ALL' | EDITOR='tee -a' visudo
 # set zsh as the default shell
 chsh -s /usr/bin/zsh root && chsh -s /usr/bin/zsh admin
 chown admin. /home/admin/.zshrc
-echo 'cd /opt/lantern/' >> /home/admin/.zshrc
+echo 'cd /lantern/' >> /home/admin/.zshrc
 echo 'alias rl="sudo systemctl restart lora"' >> /home/admin/.zshrc
-echo 'export PATH=/opt/lantern/bin/:/opt/lantern/service:$PATH' >> /home/admin/.zshrc
+echo 'export PATH=/lantern/bin/:/lantern/system:$PATH' >> /home/admin/.zshrc
 sync

@@ -9,4 +9,4 @@ config.yml
 tmp
 NOTES.*
 package-lock.json
-*/lantern/certs
+share/lantern/server/
