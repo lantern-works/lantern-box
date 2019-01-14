@@ -5,7 +5,7 @@ import os
 from persistqueue import UniqueQ
 inbox = UniqueQ("/lantern/inbox")
 
-logging.basicConfig(filename="/opt/lantern/logs/inbox.log", level=logging.DEBUG)
+logging.basicConfig(filename="/lantern/logs/inbox.log", level=logging.DEBUG)
 
 def printNow(str):
     print(str)

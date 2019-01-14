@@ -19,7 +19,7 @@ reset() {
   echo "reset wireless..."
   create_ap --stop wlan0
   netctl stop tether
-  netctl stop pollinate
+  netctl stop sync
   sleep 1
   systemctl stop netctl-auto@wlan0
   sleep 1

@@ -10,7 +10,7 @@ fi
 SSID_MATCH="LANTERN"
 
 # log file to record activity while device wifi network is momentarily offline
-LOGFILE="/lantern/logs/pollinate.log"
+LOGFILE="/lantern/logs/sync.log"
 
 touch $LOGFILE
 
@@ -19,7 +19,7 @@ touch $LOGFILE
 ##
 # Start Sync for All Nearby Lanterns
 # @todo don't shut down wlan0 before scanning
-# @todo pick the strongest LANTERN_INTERNET nearby and sync to that first, to get latest before pollinating
+# @todo pick the strongest LANTERN_INTERNET nearby and sync to that first, to get latest before sync
 ##
 start() {
   
@@ -34,7 +34,7 @@ start() {
     echo "skipping sync since no devices in list to sync..."
   else
 
-    echo "----------------- Pollinate Start ------------------" >> $LOGFILE 2>&1
+    echo "----------------- WiFi Sync Start ------------------" >> $LOGFILE 2>&1
 
     echo "taking access point offline for sync..."
 
@@ -48,7 +48,7 @@ start() {
       sync $mac_addr multi
     done
 
-    echo "----------------- Pollinate Stop ------------------" >> $LOGFILE 2>&1
+    echo "----------------- Wifi Sync Stop ------------------" >> $LOGFILE 2>&1
 
     systemctl start ap
   fi
@@ -64,9 +64,9 @@ register() {
     exit
   fi
 
-  netctl disable pollinate
+  netctl disable sync
 
-  path="/etc/netctl/pollinate"
+  path="/etc/netctl/sync"
 
   if [[ -f $path ]]; then
     rm $path
@@ -84,7 +84,7 @@ AP=${mac_addr}
 EOF
   echo "$path:"
   cat $path
-  netctl enable pollinate
+  netctl enable sync
 }
 
 ##
@@ -108,7 +108,7 @@ sync() {
   echo "========== Sync ${mac_addr} ==========" >> $LOGFILE 2>&1
 
   # connect to wireless network
-  netctl start pollinate >> $LOGFILE 2>&1
+  netctl start sync >> $LOGFILE 2>&1
   sleep 3
 
 
@@ -119,10 +119,11 @@ sync() {
   sleep 3
 
   # do the sync
-  curl -s -X POST http://localhost/sync/ >> $LOGFILE 2>&1
+  # @todo implement GunDB sync
+
 
   # disconnect
-  netctl stop pollinate >> $LOGFILE 2>&1
+  /lantern/bin/sync-wifi stop >> $LOGFILE 2>&1
   sleep 3
 
   echo "========== Stop ${mac_addr} ==========" >> $LOGFILE 2>&1
