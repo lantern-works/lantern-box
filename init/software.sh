@@ -92,20 +92,11 @@ echo "#############################################"
 ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
 
-
-
 echo "#############################################"
 echo "## Second SSL Check "
 echo "#############################################"
-
 curl https://lantern.link/api/apps
 
-
-
-echo "#############################################"
-echo "## persist-queue"
-echo "#############################################"
-pip2 install persist-queue 
 
 echo "#############################################"
 echo "## spidev"

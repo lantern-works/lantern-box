@@ -5,6 +5,7 @@ if [ ! -f /lantern/server/package.json ] || [ ! -d /lantern/server/apps ]; then
   exit
 fi
 
+sudo chown -R admin:wheel /lantern
 
 #-----------------------------------------------------------------------------
 echo "#############################################"
