@@ -19,8 +19,8 @@ run:
 	# run the docker image
 	docker run -it  \
 		--volume ${PWD}/lantern/server:/lantern/server \
-		-e SSL_CERTIFICATE="/lantern/server/certs/cert.pem" \
-		-e SSL_PRIVATE_KEY="/lantern/server/certs/privkey.pem" \
+		-e SSL_CERTIFICATE="/lantern/server/web/certs/cert.pem" \
+		-e SSL_PRIVATE_KEY="/lantern/server/web/certs/privkey.pem" \
 		-p 80:80 \
 		-p 443:443 \
 		-p 8765:8765 \
