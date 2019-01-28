@@ -7,7 +7,6 @@ if [[ $UID != 0 ]]; then
 fi
 
 LANTERN_SSID="LANTERN"
-LANTERN_INTERNET_SSID="LANTERN-INTERNET"
 
 
 
@@ -90,17 +89,13 @@ ap() {
 }
 
 ###
-# Access point with internet access
-###
-ap_internet() {
-  ap $LANTERN_INTERNET_SSID
-}
-
-###
 # Help Display
 ###
 help() {
-  echo "Please choose between network modes: ap, ap_internet, tether"
+  echo "Please choose between network modes:"
+  echo "1) ap - access point for offline access"
+  echo "2) register <wifi ssid> <wifi pass> - save your credentials"
+  echo "3) tether - uses above credentials to connect to internet"
 }
 
 
