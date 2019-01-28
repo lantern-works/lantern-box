@@ -18,8 +18,7 @@ echo "#############################################"
 # https://bugs.archlinux.org/task/53217
 pacman -S --noconfirm --overwrite  ca-certificates-utils  --overwrite ca-certificates-mozilla
 
-
-curl https://lantern.link/api/apps
+curl https://lantern.link/api/info
 
 if [[ ! -s /etc/ca-certificates/extracted/ca-bundle.trust.crt ]]; then
 	echo "WARNING: missing required ca-bundle trust file"
@@ -29,9 +28,9 @@ fi
 
 
 echo "#############################################"
-echo "## First SSL Check "
+echo "## SSL Check "
 echo "#############################################"
-curl https://lantern.link/api/apps
+curl https://lantern.link/api/info
 
 
 
@@ -39,7 +38,7 @@ echo " "
 echo "#############################################"
 echo "## Base Software Install "
 echo "#############################################"
-pacman -Sy --needed --noconfirm base-devel glibc 
+pacman -Sy --needed --noconfirm base-devel glibc gcc
 
 
 echo "#############################################"
@@ -93,12 +92,6 @@ ln -s /usr/bin/python2 /bin/python
 ln -s /usr/bin/python2-config /bin/python-config
 
 echo "#############################################"
-echo "## Second SSL Check "
-echo "#############################################"
-curl https://lantern.link/api/apps
-
-
-echo "#############################################"
 echo "## spidev"
 echo "#############################################"
 pip2 install  spidev
@@ -120,7 +113,10 @@ echo "#############################################"
 # install SublimeText remote editor for dev convenience
 curl -L -o /usr/local/bin/rsub https://raw.githubusercontent.com/aurora/rmate/master/rmate
 chmod a+x /usr/local/bin/rsub
-curl https://lantern.link/api/apps
 
+echo "#############################################"
+echo "## Final SSL Check "
+echo "#############################################"
+curl https://lantern.link/api/info
 
 sync
