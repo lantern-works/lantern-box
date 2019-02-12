@@ -32,6 +32,10 @@ echo "## SSL Check "
 echo "#############################################"
 curl https://lantern.link/api/info
 
+echo "#############################################"
+echo "## Install eInk Controller "
+echo "#############################################"
+curl -O -J -L https://github.com/lantern-works/red-ink/releases/download/v0.0.1/red-ink /lantern/bin/red-ink
 
 
 echo " "

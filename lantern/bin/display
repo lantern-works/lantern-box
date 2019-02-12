@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo /lantern/bin/red-ink $1

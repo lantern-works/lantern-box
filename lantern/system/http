@@ -19,9 +19,7 @@ node_args="${dir}/web/index.js --color"
 
 export SSL_CERTIFICATE="${dir}/web/certs/cert.pem"
 export SSL_PRIVATE_KEY="${dir}/web/certs/privkey.pem"
-# export HOOK_ADD="../bin/forward"
-# export HOOK_UPDATE="../bin/forward"
-# export HOOK_DROP="../bin/forward"
+export HOOK_CHANGE="/lantern/bin/display"
 
 if [[ -n "$WEB_MEMORY" ]]; then
   # The WEB_MEMORY environment variable is set.
