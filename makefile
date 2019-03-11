@@ -15,23 +15,23 @@ build:
 	# build the docker image
 	docker build --build-arg CACHEBUST="${DATE}" -t "lantern-box:${TAG}" .
 
-run:
+docker: build
 	# run the docker image
 	docker run -it  \
 		--volume ${PWD}/lantern/server:/lantern/server \
 		-e SSL_CERTIFICATE="/lantern/server/web/certs/cert.pem" \
 		-e SSL_PRIVATE_KEY="/lantern/server/web/certs/privkey.pem" \
-		-p 80:80 \
-		-p 443:443 \
+		-p 9080:9080 \
+		-p 9443:9443 \
 		-p 8765:8765 \
 		-m 512M \
 		"lantern-box:${TAG}"
 
-image:
+rpi:
 	docker run -it --privileged \
 	--volume ${PWD}:/tmp \
 	-e IMAGE_NAME="flash-to-pi.img" \
-	-e IMAGE_SIZE="3G" \
+	-e IMAGE_SIZE="4G" \
 	-e COPY_DIR="/tmp/lantern" \
 	-e SCRIPT_DIR="/tmp/init" \
 	-e SETUP_SCRIPT="/tmp/Pifile" \

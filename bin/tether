@@ -1,0 +1,27 @@
+#!/bin/bash
+if [ -z $1 ]; then
+    echo "missing WiFi SSID..."
+    exit
+elif [ -z $2 ]; then
+    echo "missing WiFi password..."
+    exit
+fi
+
+COMMAND=`echo {\"command\":\"wifi-tether ${1} ${2}\"}`
+echo "About to send command: ${COMMAND}"
+
+echo "  searching network for lantern..."
+
+LOCAL_IP=`arp -a | grep lantern.lan | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b"`
+if [ -z $LOCAL_IP  ]; then
+    HOSTNAME=lantern.link
+else
+    HOSTNAME=$LOCAL_IP
+fi
+    echo "###############################################################"
+    echo " ${HOSTNAME}"
+    echo "###############################################################"
+
+URI="https://${HOSTNAME}/api/command"
+echo $URI
+curl --header "Content-Type: application/json" --request "POST" --data "${COMMAND}" $URI 
