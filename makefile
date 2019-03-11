@@ -5,13 +5,15 @@ DATE := $(shell date +%s)
 
 .PHONY: build
 
-build:
+clone: 
 	# clone lantern-server if not already here on system
 	test -s ./lantern/server || git clone --single-branch --branch master https://github.com/lantern-works/lantern-serve  ./lantern/server
 	# generate platform package javascript for the server using above repository
 	cd ./lantern/server && make pack
 	# clone latest apps for the lantern-serve (you can customize this if you want to run your own)
 	test -s ./lantern/server/apps || git clone --single-branch --branch master https://github.com/lantern-works/lantern-apps  ./lantern/server/apps
+
+build: clone
 	# build the docker image
 	docker build --build-arg CACHEBUST="${DATE}" -t "lantern-box:${TAG}" .
 
@@ -27,11 +29,11 @@ docker: build
 		-m 512M \
 		"lantern-box:${TAG}"
 
-rpi:
+rpi: clone
 	docker run -it --privileged \
 	--volume ${PWD}:/tmp \
 	-e IMAGE_NAME="flash-to-pi.img" \
-	-e IMAGE_SIZE="4G" \
+	-e IMAGE_SIZE="3G" \
 	-e COPY_DIR="/tmp/lantern" \
 	-e SCRIPT_DIR="/tmp/init" \
 	-e SETUP_SCRIPT="/tmp/Pifile" \

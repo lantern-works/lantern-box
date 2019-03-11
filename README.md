@@ -4,7 +4,7 @@ The Lantern is a portable server for offline-first, decentralized apps. This rep
 
 ### Hardware Setup
 
-You will be installing the Lantern system on a [MicroSD](https://www.amazon.com/Sandisk-Ultra-Micro-UHS-I-Adapter/dp/B073K14CVB) card for [Raspberry Pi Zero W](https://www.adafruit.com/product/3708). The resulting system will contain a web server, database and long-range radio features. With this, you will be able to find and share data with other nearby Lantern devices. 
+You will be installing the Lantern system on a [MicroSD](https://www.amazon.com/Sandisk-Ultra-Micro-UHS-I-Adapter/dp/B073K14CVB) card for [Raspberry Pi Zero W](https://www.adafruit.com/product/3708). The resulting system will contain a web server, database and (with supported LoRa board) long-range sync and messaging features. With this, you will be able to find and share data with other nearby Lantern devices. 
 
 #### Step 1
 
@@ -12,6 +12,8 @@ Create the Raspberry Pi disk image. This will download the latest software and c
 ```bash
 make rpi
 ```
+
+Note: There is a known issue where you may have to run this command twice when creating your first disk image. This is normal.
 
 #### Step 2
 Download and use [Etcher](http://etcher.io) to save your disk image onto a MicroSD card 8GB or greater. Your image will be named "flash-to-pi.img" by default and will be located in a "build" folder.
