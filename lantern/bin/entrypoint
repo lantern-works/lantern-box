@@ -14,7 +14,7 @@ echo "#############################################"
 echo "# install modules for lantern-serve..."
 cd /lantern/server && npm install
 mkdir -p "/lantern/logs"
-
+sudo chown -R admin:wheel /lantern
 
 
 #-----------------------------------------------------------------------------

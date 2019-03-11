@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 
 #
 # This script supports the following environment vars:
@@ -19,7 +19,8 @@ node_args="${dir}/web/index.js --color"
 
 export SSL_CERTIFICATE="${dir}/web/certs/cert.pem"
 export SSL_PRIVATE_KEY="${dir}/web/certs/privkey.pem"
-export HOOK_CHANGE="/lantern/bin/display"
+export HOOK_CHANGE="/lantern/hooks/change"
+export HOOK_COMMAND="/lantern/hooks/command"
 
 if [[ -n "$WEB_MEMORY" ]]; then
   # The WEB_MEMORY environment variable is set.
