@@ -26,6 +26,7 @@ if [[ ! -s /etc/ca-certificates/extracted/ca-bundle.trust.crt ]]; then
 	exit 1
 fi
 
+sync
 
 echo "#############################################"
 echo "## SSL Check "
@@ -55,38 +56,6 @@ echo "## Python Install"
 echo "#############################################"
 pacman -Sy --needed --noconfirm python2 python2-pip
 
-
-
-echo "#############################################"
-echo "## Node Installs"
-echo "#############################################"
-pacman -Sy --needed --noconfirm npm
-
-
-echo "#############################################"
-echo "## Access Point"
-echo "#############################################"
-
-pacman -Sy --noconfirm --needed wpa_actiond wpa_supplicant \
-	create_ap hostapd dnsmasq avahi nss-mdns
-
-
-
-echo "#############################################"
-echo "## Misc Installs"
-echo "#############################################"
-pacman -Sy --noconfirm --needed zsh grml-zsh-config \
-    bash-completion tmux sudo nano ifplugd crda     
-
-
-echo "#############################################"
-echo "## Clock Setup "
-echo "#############################################"
-# set locale so that tmux does not complain 
-# (we are not trying for accuracy due to offline system)
-echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-locale-gen
-
 echo "#############################################"
 echo "## Python Setup"
 echo "#############################################"
@@ -109,6 +78,36 @@ echo "## rf96"
 echo "#############################################"
 # install customized RF95 library for LoRa based on RadioHead
 curl -L -o /usr/lib/python2.7/site-packages/rf95.py https://raw.githubusercontent.com/lantern-works/pyRF95/master/rf95.py
+
+echo "#############################################"
+echo "## Node Installs"
+echo "#############################################"
+pacman -Sy --needed --noconfirm npm
+
+
+echo "#############################################"
+echo "## Access Point"
+echo "#############################################"
+
+pacman -Sy --noconfirm --needed wpa_actiond wpa_supplicant \
+    create_ap hostapd dnsmasq avahi nss-mdns
+
+
+
+echo "#############################################"
+echo "## Misc Installs"
+echo "#############################################"
+pacman -Sy --noconfirm --needed zsh grml-zsh-config \
+    bash-completion tmux sudo nano ifplugd crda     
+
+
+echo "#############################################"
+echo "## Clock Setup "
+echo "#############################################"
+# set locale so that tmux does not complain 
+# (we are not trying for accuracy due to offline system)
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
 
 echo "#############################################"
 echo "## rsub"
