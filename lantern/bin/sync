@@ -123,7 +123,7 @@ sync() {
 
 
   # disconnect
-  /lantern/bin/sync-wifi stop >> $LOGFILE 2>&1
+  /lantern/bin/sync stop >> $LOGFILE 2>&1
   sleep 3
 
   echo "========== Stop ${mac_addr} ==========" >> $LOGFILE 2>&1

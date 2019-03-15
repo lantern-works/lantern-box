@@ -135,7 +135,7 @@ def checkForIncoming():
     for i in data:
         final_str += chr(i)
 
-    printNow("--------------------------------------------------")
+    printNow("==================================================")
     printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
     # dispatch incoming message to server for processing
     r = requests.put("https://localhost/api/inbox", verify=False, json={"message": str(final_str)})
@@ -143,7 +143,7 @@ def checkForIncoming():
     printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
     printNow(" |- snr = " + str(snr)) #signal-noise-ratio
     printNow(" |- rx_good = " + str(lora.rx_good)) # successful receipts
-    printNow("==================================================")
+    printNow("==================================================\n\n")
 
     print(r.json())
 
@@ -157,7 +157,6 @@ def checkForOutgoing():
     global is_receiving_message
     global is_closing
 
-    printNow("check for outgoing messages...")
     
     if lora.rx_bad > 0:
         printNow("bad tx count: " + str(lora.rx_bad))
@@ -166,18 +165,15 @@ def checkForOutgoing():
         printNow("waiting to process incoming messages...")
     else:
         is_running_queue = True
-
         # check if we have any queue items to process
-
         r = requests.post("https://localhost/api/outbox", verify=False)
-        printNow(r.text)
         data = r.json()
-    
+
         # item includes revision number so we can forward to other devices over LoRa
         # this helps us ignore old documents and duplicates
         if data["message"]:
             lora.led_on()
-            printNow("--------------------------------------------------")
+            printNow("==================================================")
             printNow("SND "   + data["message"] + " (" + str(len(data["message"])) + ")")
             power = lora.spi_read(rf95.REG_09_PA_CONFIG)
             lna = lora.spi_read(rf95.REG_0C_LNA)
@@ -186,14 +182,9 @@ def checkForOutgoing():
             printNow(" |- tx_good = " + str(lora.tx_good))
             printNow(" |- reg_pa_config = " + str(power))
             printNow(" |- reg_lna = " + str(lna))
-        else:
-            printNow("skipping empty message")
-
-        printNow("remaining in queue: " + str(data["rows"]))
-
+            printNow("remaining in queue: " + str(data["rows"]))
+            printNow("==================================================\n\n")
         lora.led_off()
-
-        printNow("==================================================")
         is_running_queue = False
 
 
