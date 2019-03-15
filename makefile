@@ -21,7 +21,7 @@ docker: build
 	# run the docker image
 	docker run -it  \
 		--volume ${PWD}/lantern/server:/lantern/server \
-		-e SSL_CERTIFICATE="/lantern/server/web/certs/cert.pem" \
+		-e SSL_CERTIFICATE="/lantern/server/web/certs/fullchain.pem" \
 		-e SSL_PRIVATE_KEY="/lantern/server/web/certs/privkey.pem" \
 		-p 9080:9080 \
 		-p 9443:9443 \

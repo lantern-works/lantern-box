@@ -17,7 +17,7 @@ WEB_MEMORY=300
 dir="/lantern/server"
 node_args="${dir}/web/index.js --color"
 
-export SSL_CERTIFICATE="${dir}/web/certs/cert.pem"
+export SSL_CERTIFICATE="${dir}/web/certs/fullchain.pem"
 export SSL_PRIVATE_KEY="${dir}/web/certs/privkey.pem"
 export HOOK_CHANGE="/lantern/hooks/change"
 export HOOK_COMMAND="/lantern/hooks/command"
