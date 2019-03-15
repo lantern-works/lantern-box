@@ -8,6 +8,7 @@ function addService() {
     local svc=$1
     local label=$2
     local timer=$3
+    local enable=$3
 
     # http service    
     echo "installing ${svc} service..."
@@ -42,8 +43,9 @@ EOF
 
     cat "/etc/systemd/system/${svc}.service"
 
-
-    systemctl enable ${svc}.service
+    if [[ $enable ]]; then
+        systemctl enable ${svc}.service
+    fi
 
 
     if [[ $timer ]]; then
@@ -68,9 +70,9 @@ EOF
 }
 
 # run these all the time
-addService http "Web & Database"
-addService ap "Access Point / Hotspot"
-addService lora "LoRa Radio"
+addService http "Web & Database" true
+addService ap "Access Point / Hotspot" true
+addService lora "LoRa Radio" true
 # bring these up on a timer
 # addService pollinate "P2P Device Sync" 600
 
