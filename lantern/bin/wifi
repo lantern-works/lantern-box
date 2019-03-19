@@ -7,7 +7,6 @@ if [[ $UID != 0 ]]; then
 fi
 
 LANTERN_SSID="LANTERN"
-LANTERN_INTERNET_SSID="LANTERN-INTERNET"
 
 
 
@@ -19,7 +18,7 @@ reset() {
   echo "reset wireless..."
   create_ap --stop wlan0
   netctl stop tether
-  netctl stop pollinate
+  netctl stop sync
   sleep 1
   systemctl stop netctl-auto@wlan0
   sleep 1
@@ -65,6 +64,12 @@ EOF
 # Tether to existing wireless router
 ###
 tether() {
+
+  if [[ ! -f /etc/netctl/tether ]]; then
+    echo "please use register command to specify SSID and password..."
+    exit
+  fi
+
   echo "preparing tether to wireless router..."
   create_ap --stop wlan0
   sleep 5
@@ -84,17 +89,13 @@ ap() {
 }
 
 ###
-# Access point with internet access
-###
-ap_internet() {
-  ap $LANTERN_INTERNET_SSID
-}
-
-###
 # Help Display
 ###
 help() {
-  echo "Please choose between network modes: ap, ap_internet, tether"
+  echo "Please choose between network modes:"
+  echo "1) ap - access point for offline access"
+  echo "2) register <wifi ssid> <wifi pass> - save your credentials"
+  echo "3) tether - uses above credentials to connect to internet"
 }
 
 

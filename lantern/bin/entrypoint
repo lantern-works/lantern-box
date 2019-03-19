@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [ ! -f /lantern/server/package.json ] || [ ! -d /lantern/server/apps ]; then
+  echo "WARNING: missing lantern-serve or apps. install on build machine first..."
+  exit
+fi
+
+sudo chown -R admin:wheel /lantern
+
+#-----------------------------------------------------------------------------
+echo "#############################################"
+echo "## lantern-serve updates"
+echo "#############################################"
+echo "# install modules for lantern-serve..."
+cd /lantern/server && npm install
+mkdir -p "/lantern/logs"
+sudo chown -R admin:wheel /lantern
+
+
+#-----------------------------------------------------------------------------
+if [[ -f /boot/config.txt ]]; then
+  # finish raspberry pi setup...
+  echo "#############################################"
+  echo "## Raspberry Pi Image Ready"
+  echo "#############################################"
+  echo "updating admin password..."
+  ADMIN_PASS=${ADMIN_PASS:-wins}
+  echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
+  echo "saving image to disk..."
+  sync
+else
+  # otherwise if this is docker, run the server...
+  /lantern/system/http
+fi

@@ -1,0 +1,26 @@
+#!/bin/bash
+# default commands may be replaced or extended
+
+function reply() {
+    echo $1|tr -d '\n'
+}
+
+if [ $1 == 'display' ]; then
+    /lantern/bin/red-ink $1
+    reply 'display update complete'
+elif [ $1 == 'wifi-register' ]; then
+    /lantern/bin/wifi register $2 $3
+    reply "wifi credentials registered"
+elif [ $1 == 'wifi-tether' ]; then
+    if [ $2 ]; then
+        /lantern/bin/wifi register $2 $3
+        reply "wifi credentials registered"
+    fi
+    /lantern/bin/wifi tether
+    reply "wifi tethering activated"
+elif [ $1 == 'wifi-ap' ]; then
+    /lantern/bin/wifi ap
+    reply "wifi access point activated"
+elif [ $1 == 'test' ]; then
+    reply $PWD
+fi

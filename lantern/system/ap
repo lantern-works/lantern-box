@@ -9,10 +9,10 @@ function finish {
 trap finish SIGTERM
 trap finish EXIT
 
-echo "make sure we stop any pollination..."
-systemctl stop pollinate
+echo "make sure we stop any wifi sync..."
+systemctl stop sync
 
 echo "bringing wireless access point online..."
-/opt/lantern/bin/wireless ap
+/lantern/bin/wifi ap
 
 sleep infinity & wait

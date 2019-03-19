@@ -1,0 +1,8 @@
+#!/bin/bash
+# valid message that searches for a package named "demo" with version 0.0.1
+# the numbers afterwards let receiving device know we are starting from scratch, i.e. we want all updates
+HOSTNAME=${1:-localhost}
+URI="https://${HOSTNAME}/api/outbox"
+COMMAND=`echo {\"message\":\"demo@0.0.1::0::0::0\"}`
+curl -k --header "Content-Type: application/json" --request "PUT" --data "${COMMAND}" $URI 
+exit

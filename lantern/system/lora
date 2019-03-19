@@ -6,10 +6,12 @@ import time
 import signal
 import logging
 import os
-import yaml
+import requests
 from threading import Timer
-from persistqueue import UniqueQ
 import rf95
+
+
+requests.packages.urllib3.disable_warnings()
 
 DO_SEND = True
 DO_RECEIVE = True
@@ -50,8 +52,7 @@ did_init = False
 is_running_queue = False
 is_receiving_message = False
 is_closing = False
-inbox = UniqueQ("/opt/lantern/inbox")
-logging.basicConfig(filename="/opt/lantern/logs/lora.log", level=logging.DEBUG)
+logging.basicConfig(filename="/lantern/logs/lora.log", level=logging.DEBUG)
 
 
 #-----------------------------------------------------------------------------
@@ -70,12 +71,7 @@ def isLoRaBusy():
 def setupRadio(): 
 
     # determine which frequency to broadcast on
-    try:
-        y = yaml.load(open("/opt/lantern/config.yml"))
-        freq = y["FREQUENCY"]
-        printNow("using custom frequency...")
-    except Exception,e:
-        freq = DEFAULT_LORA_FREQUENCY
+    freq = DEFAULT_LORA_FREQUENCY
 
     lora.set_frequency(freq)
     printNow("freq = " + str(freq) + " MHz")
@@ -139,14 +135,18 @@ def checkForIncoming():
     for i in data:
         final_str += chr(i)
 
-    printNow("--------------------------------------------------")
+    printNow("==================================================")
     printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
-    inbox.put(str(final_str))
+    # dispatch incoming message to server for processing
+    r = requests.put("https://localhost/api/inbox", verify=False, json={"message": str(final_str)})
     snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
     printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
     printNow(" |- snr = " + str(snr)) #signal-noise-ratio
     printNow(" |- rx_good = " + str(lora.rx_good)) # successful receipts
-    printNow("==================================================")
+    printNow("==================================================\n\n")
+
+    print(r.json())
+
     is_receiving_message = False
     for x in range(0, 3):
         lora.flash_led(0.5)
@@ -157,50 +157,33 @@ def checkForOutgoing():
     global is_receiving_message
     global is_closing
 
+    
     if lora.rx_bad > 0:
         printNow("bad tx count: " + str(lora.rx_bad))
 
-    if is_closing:
-        pass
-    # skip timer runs if we're still processing a queue
-    elif is_running_queue:
-        printNow("waiting for outbox to process...")
     elif is_receiving_message:
-        printNow("waiting for inbox to process...")
+        printNow("waiting to process incoming messages...")
     else:
         is_running_queue = True
-        outbox = UniqueQ("/opt/lantern/outbox")
-        to_process = len(outbox)
-        if to_process > 0:
-            
-            if to_process > 1:
-                printNow("queue to process:" + str(to_process) + "\n\n")
-            
-            while to_process > 0:
-                item = outbox.get()
-                # item includes revision number so we can forward to other devices over LoRa
-                # this helps us ignore old documents and duplicates
-                if len(item):
-                    lora.led_on()
-                    printNow("--------------------------------------------------")
-                    printNow("SND "   + item + " (" + str(len(item)) + ")")
-                    power = lora.spi_read(rf95.REG_09_PA_CONFIG)
-                    lna = lora.spi_read(rf95.REG_0C_LNA)
-                    lora.send(lora.str_to_data(item))
-                    lora.wait_packet_sent()
-                    printNow(" |- tx_good = " + str(lora.tx_good))
-                    printNow(" |- reg_pa_config = " + str(power))
-                    printNow(" |- reg_lna = " + str(lna))
-                else:
-                    printNow("skipping empty message")
-                to_process -= 1
-                if to_process > 0:
-                    printNow("remaining in queue: " + str(len(outbox)))
-                lora.led_off()
-                if to_process > 0:
-                    time.sleep(SEND_INTERVAL)
-                outbox.task_done()
+        # check if we have any queue items to process
+        r = requests.post("https://localhost/api/outbox", verify=False)
+        data = r.json()
+
+        # item includes revision number so we can forward to other devices over LoRa
+        # this helps us ignore old documents and duplicates
+        if data["message"]:
+            lora.led_on()
             printNow("==================================================")
+            printNow("SND "   + data["message"] + " (" + str(len(data["message"])) + ")")
+            power = lora.spi_read(rf95.REG_09_PA_CONFIG)
+            lna = lora.spi_read(rf95.REG_0C_LNA)
+            lora.send(lora.str_to_data(data["message"]))
+            lora.wait_packet_sent()
+            printNow(" |- tx_good = " + str(lora.tx_good))
+            printNow(" |- reg_pa_config = " + str(power))
+            printNow(" |- reg_lna = " + str(lna))
+            printNow("remaining in queue: " + str(data["rows"]))
+            printNow("==================================================\n\n")
         lora.led_off()
         is_running_queue = False
 
