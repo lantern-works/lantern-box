@@ -8,7 +8,6 @@ function addService() {
     local svc=$1
     local label=$2
     local timer=$3
-    local enable=$3
 
     # http service    
     echo "installing ${svc} service..."
@@ -34,7 +33,6 @@ Description=Lantern ${label} Service
 
 [Service]
 ExecStart=/lantern/system/${svc}
-Restart=always
 
 [Install]
 WantedBy=multi-user.target
@@ -43,9 +41,7 @@ EOF
 
     cat "/etc/systemd/system/${svc}.service"
 
-    if [[ $enable ]]; then
-        systemctl enable ${svc}.service
-    fi
+    systemctl enable ${svc}.service
 
 
     if [[ $timer ]]; then
@@ -56,7 +52,7 @@ EOF
 Description=Run ${svc} every ${timer} seconds
 
 [Timer]
-OnBootSec=120sec
+OnBootSec=10sec
 OnUnitInactiveSec=${timer}sec
 
 
@@ -70,11 +66,11 @@ EOF
 }
 
 # run these all the time
-addService http "Web & Database" true
-addService ap "Access Point / Hotspot" true
-addService lora "LoRa Radio" true
+addService http "Web & Database"
+addService ap "Access Point / Hotspot"
+addService lora "LoRa Radio"
 # bring these up on a timer
-# addService pollinate "P2P Device Sync" 600
+addService test "Test Battery Power and Antenna" 10
 
 
 
