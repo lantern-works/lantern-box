@@ -52,7 +52,12 @@ did_init = False
 is_running_queue = False
 is_receiving_message = False
 is_closing = False
-logging.basicConfig(filename="/lantern/logs/lora.log", level=logging.DEBUG)
+logging.basicConfig(
+        filename='/lantern/logs/lora.log',
+        level=logging.DEBUG,
+        format='[%(asctime)s] {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
+        datefmt='%H:%M:%S'
+    )
 
 
 #-----------------------------------------------------------------------------
@@ -60,6 +65,7 @@ def printNow(str):
     print(str)
     logging.info(str)
     sys.stdout.flush()
+
 
 def isLoRaBusy():
     lora.spi.open(0,lora.cs)
@@ -74,11 +80,11 @@ def setupRadio():
     freq = DEFAULT_LORA_FREQUENCY
 
     lora.set_frequency(freq)
-    printNow("freq = " + str(freq) + " MHz")
+    printNow('freq = ' + str(freq) + ' MHz')
 
     # set power levels
     lora.set_tx_power(LORA_POWER)
-    printNow("power level = " + str(LORA_POWER))
+    printNow('power level = ' + str(LORA_POWER))
 
     # set custom modem config
     bandwidth = rf95.BW_62K5HZ
@@ -104,11 +110,11 @@ def setupRadio():
     lora.spi_write(rf95.REG_26_MODEM_CONFIG3, \
             agc_auto | low_data_rate)
 
-    printNow("bandwidth = " + str(bandwidth))
-    printNow("spreading factor = " + str(spreading_factor))
-    printNow("coding_rate = " + str(coding_rate))
-    printNow("agc_auto = " + str(agc_auto))
-    printNow("current mode = " + str(lora.spi_read(rf95.REG_01_OP_MODE)))
+    printNow('bandwidth = ' + str(bandwidth))
+    printNow('spreading factor = ' + str(spreading_factor))
+    printNow('coding_rate = ' + str(coding_rate))
+    printNow('agc_auto = ' + str(agc_auto))
+    printNow('current mode = ' + str(lora.spi_read(rf95.REG_01_OP_MODE)))
 
     # announce that modem is ready with lighting effects
     for x in range(0, 5):
@@ -131,21 +137,25 @@ def checkForIncoming():
     lora.led_on()
     payload_size = lora.buflen
     data = lora.recv()
-    final_str = ""
+    final_str = ''
     for i in data:
         final_str += chr(i)
 
-    printNow("==================================================")
-    printNow("RCV " + str(final_str) + " (" + str(payload_size) +")")
-    # dispatch incoming message to server for processing
-    r = requests.put("https://localhost/api/inbox", verify=False, json={"message": str(final_str)})
+    printNow('==================================================')
+    printNow('RCV ' + str(final_str) + ' (' + str(payload_size) +')')
     snr = lora.spi_read(rf95.REG_19_PKT_SNR_VALUE)
-    printNow(" |- rssi = " + str(lora.last_rssi)) # signal strength
-    printNow(" |- snr = " + str(snr)) #signal-noise-ratio
-    printNow(" |- rx_good = " + str(lora.rx_good)) # successful receipts
-    printNow("==================================================\n\n")
+    printNow(' |- rssi = ' + str(lora.last_rssi)) # signal strength
+    printNow(' |- snr = ' + str(snr)) #signal-noise-ratio
+    printNow(' |- rx_good = ' + str(lora.rx_good)) # successful receipts
+    printNow('==================================================\n\n')
+    
+    # dispatch incoming message to server for processing
+    try:
+        r = requests.put('https://localhost/api/inbox', verify=False, json={'message': str(final_str)})
+        print(r.json())
+    except requests.ConnectionError:
+        printNow('unable to deliver to inbox since http service not yet available...')
 
-    print(r.json())
 
     is_receiving_message = False
     for x in range(0, 3):
@@ -159,57 +169,63 @@ def checkForOutgoing():
 
     
     if lora.rx_bad > 0:
-        printNow("bad tx count: " + str(lora.rx_bad))
+        printNow('bad tx count: ' + str(lora.rx_bad))
 
     elif is_receiving_message:
-        printNow("waiting to process incoming messages...")
+        printNow('waiting to process incoming messages...')
     else:
         is_running_queue = True
         # check if we have any queue items to process
-        r = requests.post("https://localhost/api/outbox", verify=False)
-        data = r.json()
+        try:
+            r = requests.post('https://localhost/api/outbox', verify=False)
+            data = r.json()
 
-        # item includes revision number so we can forward to other devices over LoRa
-        # this helps us ignore old documents and duplicates
-        if data["message"]:
-            lora.led_on()
-            printNow("==================================================")
-            printNow("SND "   + data["message"] + " (" + str(len(data["message"])) + ")")
-            power = lora.spi_read(rf95.REG_09_PA_CONFIG)
-            lna = lora.spi_read(rf95.REG_0C_LNA)
-            lora.send(lora.str_to_data(data["message"]))
-            lora.wait_packet_sent()
-            printNow(" |- tx_good = " + str(lora.tx_good))
-            printNow(" |- reg_pa_config = " + str(power))
-            printNow(" |- reg_lna = " + str(lna))
-            printNow("remaining in queue: " + str(data["rows"]))
-            printNow("==================================================\n\n")
-        lora.led_off()
+            # item includes revision number so we can forward to other devices over LoRa
+            # this helps us ignore old documents and duplicates
+            if data['message']:
+                lora.led_on()
+                printNow('==================================================')
+                printNow('SND '   + data['message'] + ' (' + str(len(data['message'])) + ')')
+                power = lora.spi_read(rf95.REG_09_PA_CONFIG)
+                lna = lora.spi_read(rf95.REG_0C_LNA)
+                lora.send(lora.str_to_data(data['message']))
+                lora.wait_packet_sent()
+                printNow(' |- tx_good = ' + str(lora.tx_good))
+                printNow(' |- reg_pa_config = ' + str(power))
+                printNow(' |- reg_lna = ' + str(lna))
+                printNow('remaining in queue: ' + str(data['rows']))
+                printNow('==================================================\n\n')
+            lora.led_off()
+            
+        except requests.ConnectionError:
+            printNow('waiting for outbox from http service...')
+
         is_running_queue = False
+
 
 
 
 #-----------------------------------------------------------------------------
 def main():
 
-    printNow("============================")
-    printNow("  Lantern LoRa Service")
-    printNow("============================")
+    printNow('============================')
+    printNow('  Lantern LoRa Service')
+    printNow('============================')
 
     def exitGracefully():
-        printNow("\nexiting gracefully...")
+        printNow('\nexiting gracefully...')
         is_closing = True
         if 'rt' in locals() and rt.is_running:
             rt.stop()
-            printNow("halting send activity...")
+            printNow('halting send activity...')
         else:
-            printNow("no send activity to halt...")
+            printNow('no send activity to halt...')
             
         lora.set_mode_idle()
-        printNow("set lora to idle...")
+        printNow('set lora to idle...')
         time.sleep(1)
         lora.led_off()
-        printNow("running cleanup...")
+        printNow('running cleanup...')
         lora.cleanup()
         sys.exit()
 
@@ -219,13 +235,13 @@ def main():
     
     try:
         if isLoRaBusy():
-            printNow("radio in use elsewhere...")
+            printNow('radio in use elsewhere...')
             quit(1)
         elif not lora.init(): # returns True if found
-            printNow("radio not found or not ready. please adjust hardware switch to CE0 or try later...")
+            printNow('radio not found or not ready. please adjust hardware switch to CE0 or try later...')
             exitGracefully()
         else:
-            print("radio found...")
+            print('radio found...')
             did_init = True
             # make sure we always exit gracefully when running as a service
             signal.signal(signal.SIGINT, handleStopSignals)
@@ -236,11 +252,11 @@ def main():
             if DO_SEND:
                 rt = RepeatedTimer(SEND_INTERVAL, checkForOutgoing)
                 rt.start()
-                printNow("ready to send messages...")
+                printNow('ready to send messages...')
 
             if DO_RECEIVE:
                 # when we're not sending messags, drop into receiving mode
-                printNow("watching airwaves...")
+                printNow('watching airwaves...')
                 while True:
                     checkForIncoming()
 
