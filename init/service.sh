@@ -16,10 +16,10 @@ function addService() {
     if [[ $timer ]]; then
         cat <<EOF >"/etc/systemd/system/${svc}.service"
 [Unit]
-Description=Lantern ${label} Service
+Description=Lantern ${label} Timed Service
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/lantern/system/${svc}
 StandardError=journal
 
@@ -61,6 +61,7 @@ WantedBy=multi-user.target
 
 EOF
         cat "/etc/systemd/system/${svc}.timer"
+        systemctl enable ${svc}.timer
     fi
 
 }
