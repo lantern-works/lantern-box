@@ -48,7 +48,7 @@ class RepeatedTimer(object):
 
 
 #-----------------------------------------------------------------------------
-lora = rf95.RF95(0, 25, None, 13)
+lora = rf95.RF95(1, 25, None, 13)
 did_init = False
 is_running_queue = False
 is_receiving_message = False
@@ -126,6 +126,8 @@ def setupRadio():
     printInfo('agc_auto = ' + str(agc_auto))
     printInfo('current mode = ' + str(lora.spi_read(rf95.REG_01_OP_MODE)))
 
+    os.system('/lantern/bin/red-ink "lora=' + str(freq) + '/' + str(bandwidth) + '/' + str(spreading_factor) + '/' + str(coding_rate) + '"')
+
     # announce that modem is ready with lighting effects
     for x in range(0, 5):
         lora.flash_led(1)
@@ -144,6 +146,7 @@ def readIncomingMessage():
     printInfo(' |- snr = ' + str(snr)) #signal-noise-ratio
     printInfo(' |- rx_good = ' + str(lora.rx_good)) # successful receipts
     printInfo('==================================================\n\n')
+    os.system('/lantern/bin/red-ink "' + final_str + '"')
     return str(final_str)
 
 
@@ -204,6 +207,7 @@ def checkForOutgoing():
             # item includes revision number so we can forward to other devices over LoRa
             # this helps us ignore old documents and duplicates
             if data['message']:
+                os.system('/lantern/bin/red-ink "' + data["message"] + '"')
                 lora.led_on()
                 printInfo('==================================================')
                 printInfo('SND '   + data['message'] + ' (' + str(len(data['message'])) + ')')
