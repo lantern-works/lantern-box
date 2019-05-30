@@ -26,9 +26,10 @@ if [[ -f /boot/config.txt ]]; then
   echo "updating admin password..."
   ADMIN_PASS=${ADMIN_PASS:-wins}
   echo -e "${ADMIN_PASS}\n${ADMIN_PASS}" | passwd admin
-  echo "saving image to disk..."
+  echo "saving image to disk...".
+  sudo systemctl mask systemd-journald-audit.socket
   sync
 else
-  # otherwise if this is docker, run the server...
+  # otherwise if this is docker, run the server..
   /lantern/system/http
 fi
