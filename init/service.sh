@@ -71,7 +71,7 @@ addService http "Web & Database"
 addService ap "Access Point / Hotspot"
 addService lora "LoRa Radio"
 # bring these up on a timer
-addService test "Test Battery Power and Antenna" 10
+# addService test "Test Battery Power and Antenna" 10
 
 
 
