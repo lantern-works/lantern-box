@@ -89,7 +89,7 @@ echo "#############################################"
 echo "## Access Point"
 echo "#############################################"
 
-pacman -Sy --noconfirm --needed wpa_actiond wpa_supplicant \
+pacman -Sy --noconfirm --needed wpa_supplicant \
     create_ap hostapd dnsmasq avahi nss-mdns
 
 
