@@ -16,6 +16,7 @@ LANTERN_SSID="LANTERN"
 ###
 reset() {
   echo "reset wireless..."
+  /lantern/bin/red-ink "wifi reset..."
   create_ap --stop wlan0
   netctl stop tether
   netctl stop sync
@@ -58,6 +59,7 @@ IP=dhcp
 Key="${wifi_pass}"
 EOF
   echo "wrote new netctl file named: tether"
+  /lantern/bin/red-ink "wifi = ${wifi_ssid}"
 }
 
 ###
@@ -74,7 +76,8 @@ tether() {
   create_ap --stop wlan0
   sleep 5
   netctl start tether
-  echo "tether mode enabled..."
+  echo "tether mode enabled..."  
+  /lantern/bin/red-ink "tethering for internet..."
 }
 
 ###
@@ -85,7 +88,8 @@ ap() {
   echo "configuring access point: ${ssid}"
   echo "you will need to reconnect through a shared wireless network..."
   reset
-  create_ap --redirect-to-localhost --daemon --no-virt -n wlan0 "$ssid"
+  create_ap --redirect-to-localhost --daemon --no-virt -n wlan0 "$ssid"  
+  /lantern/bin/red-ink "access point = ${ssid}"
 }
 
 ###
