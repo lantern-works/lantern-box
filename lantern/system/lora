@@ -198,7 +198,6 @@ def checkForOutgoing():
     elif is_receiving_message:
         printInfo('waiting to process incoming messages...')
     else:
-        is_running_queue = True
         # check if we have any queue items to process
         try:
             r = requests.post('https://localhost/api/outbox', verify=False)
@@ -207,6 +206,7 @@ def checkForOutgoing():
             # item includes revision number so we can forward to other devices over LoRa
             # this helps us ignore old documents and duplicates
             if data['message']:
+                is_running_queue = True
                 os.system('/lantern/bin/red-ink "' + data["message"] + '"')
                 lora.led_on()
                 printInfo('==================================================')
@@ -220,12 +220,12 @@ def checkForOutgoing():
                 printInfo(' |- reg_lna = ' + str(lna))
                 printInfo('remaining in queue: ' + str(data['rows']))
                 printInfo('==================================================\n\n')
-            lora.led_off()
+                is_running_queue = False
+                lora.led_off()
             
         except requests.ConnectionError:
             printInfo('waiting for outbox from http service...')
 
-        is_running_queue = False
 
 
 
