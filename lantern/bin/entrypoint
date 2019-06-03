@@ -13,6 +13,11 @@ echo "## lantern-serve updates"
 echo "#############################################"
 echo "# install modules for lantern-serve..."
 cd /lantern/server && npm install
+# clear any old log files
+rm -rf /lantern/logs
+# clear any environment config
+rm -rf /lantern/server/env/config.yml
+# make new logs directory
 mkdir -p "/lantern/logs"
 sudo chown -R admin:wheel /lantern
 

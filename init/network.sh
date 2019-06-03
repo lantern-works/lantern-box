@@ -12,6 +12,10 @@ if [[ -f /boot/config.txt ]]; then
 
     # enable wireless, actual connection details will be configured by the user
     ln -sf /usr/lib/systemd/system/netctl-auto@.service /etc/systemd/system/multi-user.target.wants/netctl-auto@wlan0.service
+
+    # setup hosts file
+    echo '127.0.0.1 lantern localhost' >> /etc/hosts
+    echo '::1 lantern localhost' >> /etc/hosts
 else
     echo "skipping network setup within docker container..."    
 fi

@@ -12,13 +12,14 @@ echo "  Lantern HTTP Service"
 echo "============================"
 
 # Safe Limit for Raspberry Pi Zero
-WEB_MEMORY=300
+WEB_MEMORY=350
 
 dir="/lantern/server"
 node_args="${dir}/web/index.js --color"
 
-export SSL_CERTIFICATE="${dir}/web/certs/fullchain.pem"
+export SSL_CERTIFICATE="${dir}/web/certs/cert.pem"
 export SSL_PRIVATE_KEY="${dir}/web/certs/privkey.pem"
+export SSL_CA="${dir}/web/certs/SectigoRSADomainValidationSecureServerCA.crt,${dir}/web/certs/AddTrustExternalCARoot.crt,${dir}/web/certs/USERTrustRSAAddTrustCA.crt"
 export LORA_TEST="true"
 export HOOK_CHANGE="/lantern/hooks/change"
 export HOOK_COMMAND="/lantern/hooks/command"

@@ -21,11 +21,11 @@ docker: build
 	# run the docker image
 	docker run -it  \
 		--volume ${PWD}/lantern/server:/lantern/server \
-		-e SSL_CERTIFICATE="/lantern/server/web/certs/fullchain.pem" \
+		-e SSL_CERTIFICATE="/lantern/server/web/certs/cert.pem" \
 		-e SSL_PRIVATE_KEY="/lantern/server/web/certs/privkey.pem" \
-		-p 9080:9080 \
-		-p 9443:9443 \
-		-p 8765:8765 \
+        -e SSL_CA="/lantern/server/web/certs/SectigoRSADomainValidationSecureServerCA.crt,/lantern/server/web/certs/AddTrustExternalCARoot.crt,/lantern/server/web/certs/USERTrustRSAAddTrustCA.crt" \
+		-p 80:80 \
+		-p 443:443 \
 		-m 512M \
 		"lantern-box:${TAG}"
 
